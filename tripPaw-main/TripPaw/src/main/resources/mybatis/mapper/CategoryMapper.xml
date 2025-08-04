@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssdam.tripPaw.category.CategoryMapper">
+	<resultMap id="categoryResultMap"
+		type="com.ssdam.tripPaw.domain.Category">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+	</resultMap>
+
+
+	<!-- insert -->
+	<insert id="insert" parameterType="Category">
+		INSERT INTO category
+		( name )
+		VALUES
+		( #{name} )
+	</insert>
+
+
+	<!-- select -->
+	<select id="findAll" resultMap="categoryResultMap">
+		SELECT * FROM category
+	</select>
+	<select id="findById" resultMap="categoryResultMap">
+		SELECT * FROM category WHERE id = #{id}
+	</select>
+	<select id="findByName" resultMap="categoryResultMap">
+		SELECT * FROM category WHERE name = #{name}
+	</select>
+	<select id="countCategories" resultType="int">
+		SELECT COUNT(*) FROM category
+	</select>
+
+	<!-- update -->
+	<update id="updateById">
+		UPDATE category
+		SET name = #{name}
+		WHERE id = #{id}
+	</update>
+
+
+</mapper>

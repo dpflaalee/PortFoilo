@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.ssdam.tripPaw.memberTripPlan.MemberTripPlanMapper">
+
+	<!-- MemberTripPlan + TripPlan + Courses 매핑용 resultMap -->
+	<resultMap id="memberTripPlanWithCoursesMap"
+		type="com.ssdam.tripPaw.domain.MemberTripPlan">
+		<id property="id" column="mtp_id" />
+		<result property="titleOverride" column="title_override" />
+		<result property="publicVisible" column="is_public" />
+		<result property="startDate" column="start_date" />
+		<result property="endDate" column="end_date" />
+		<result property="status" column="status" />
+		<result property="countPeople" column="count_people" />
+		<result property="countPet" column="count_pet" />
+		<result property="createdAt" column="mtp_created_at" />
+		<result property="imageUrl" column="image_url" />
+
+		<association property="member"
+			javaType="com.ssdam.tripPaw.domain.Member">
+			<id property="id" column="member_id" />
+		</association>
+
+		<association property="tripPlan"
+			javaType="com.ssdam.tripPaw.domain.TripPlan">
+			<id property="id" column="tp_id" />
+			<result property="title" column="tp_title" />
+			<result property="days" column="tp_days" />
+			<result property="createdAt" column="tp_created_at" />
+			<result property="publicVisible" column="tp_is_public" />
+			<result property="imageUrl" column="tp_image_url" />
+
+			<collection property="tripPlanCourses"
+				ofType="com.ssdam.tripPaw.domain.TripPlanCourse">
+				<id property="id" column="c_id" />
+				<association property="route"
+					javaType="com.ssdam.tripPaw.domain.Route">
+					<id property="id" column="route_id" />
+					<result property="name" column="route_name" />
+					<collection property="routePlaces"
+						ofType="com.ssdam.tripPaw.domain.RoutePlace">
+						<id property="id" column="rp_id" />
+						<association property="place"
+							javaType="com.ssdam.tripPaw.domain.Place">
+							<id property="id" column="p_id" />
+							<result property="name" column="p_name" />
+							<result property="latitude" column="latitude" />
+							<result property="longitude" column="longitude" />
+						</association>
+					</collection>
+				</association>
+			</collection>
+		</association>
+	</resultMap>
+
+	<!-- 내 MemberTripPlan 목록 조회 -->
+	<select id="findByMemberId" parameterType="long"
+		resultMap="memberTripPlanWithCoursesMap">
+		SELECT
+		mtp.id AS mtp_id,
+		mtp.title_override,
+		mtp.is_public,
+		mtp.start_date,
+		mtp.end_date,
+		mtp.status,
+		mtp.count_people,
+		mtp.count_pet,
+		mtp.created_at AS mtp_created_at,
+		mtp.image_url,
+		mtp.member_id,
+
+		tp.id AS tp_id,
+		tp.title AS tp_title,
+		tp.days AS tp_days,
+		tp.created_at AS tp_created_at,
+		tp.is_public AS tp_is_public,
+		tp.image_url AS tp_image_url,
+
+		c.id AS c_id,
+		r.id AS route_id,
+		r.name AS
+		route_name,
+		rp.id AS rp_id,
+		p.id AS p_id,
+		p.name AS p_name,
+		p.latitude,
+		p.longitude
+
+		FROM member_trip_plan mtp
+		JOIN trip_plan tp ON
+		mtp.trip_plan_id = tp.id
+		LEFT JOIN trip_plan_course c ON tp.id =
+		c.trip_plan_id
+		LEFT JOIN route r ON c.route_id = r.id
+		LEFT JOIN
+		route_place rp ON r.id = rp.route_id
+		LEFT JOIN place p ON rp.place_id =
+		p.id
+		WHERE mtp.member_id = #{memberId}
+		ORDER BY mtp.created_at DESC,
+		c.id ASC, rp.id ASC
+	</select>
+
+	<!-- 단건 조회 -->
+	<select id="findById" parameterType="long"
+		resultMap="memberTripPlanWithCoursesMap">
+		SELECT
+		mtp.id AS mtp_id,
+		mtp.title_override,
+		mtp.is_public,
+		mtp.start_date,
+		mtp.end_date,
+		mtp.status,
+		mtp.count_people,
+		mtp.count_pet,
+		mtp.created_at AS mtp_created_at,
+		mtp.image_url,
+		mtp.member_id,
+
+		tp.id AS tp_id,
+		tp.title AS tp_title,
+		tp.days AS tp_days,
+		tp.created_at AS tp_created_at,
+		tp.is_public AS tp_is_public,
+		tp.image_url AS tp_image_url,
+
+		c.id AS c_id,
+		r.id AS route_id,
+		r.name AS
+		route_name,
+		rp.id AS rp_id,
+		p.id AS p_id,
+		p.name AS p_name,
+		p.latitude,
+		p.longitude
+
+		FROM member_trip_plan mtp
+		JOIN trip_plan tp ON
+		mtp.trip_plan_id = tp.id
+		LEFT JOIN trip_plan_course c ON tp.id =
+		c.trip_plan_id
+		LEFT JOIN route r ON c.route_id = r.id
+		LEFT JOIN
+		route_place rp ON r.id = rp.route_id
+		LEFT JOIN place p ON rp.place_id =
+		p.id
+		WHERE mtp.id = #{id}
+		ORDER BY c.id ASC, rp.id ASC
+	</select>
+
+	<!-- 삽입 -->
+	<insert id="insert"
+		parameterType="com.ssdam.tripPaw.domain.MemberTripPlan"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO member_trip_plan (
+		member_id, trip_plan_id, title_override, is_public,
+		start_date,
+		end_date, status, count_people, count_pet,
+		created_at, image_url
+		)
+		VALUES (
+		#{member.id}, #{tripPlan.id}, #{titleOverride},
+		#{publicVisible},
+		#{startDate}, #{endDate}, #{status}, #{countPeople},
+		#{countPet},
+		#{createdAt}, #{imageUrl}
+		)
+	</insert>
+
+	<!-- 다른 사람의 tripPlan을 memberTripPlan으로 저장 -->
+	<insert id="insertMemberTripPlan">
+		INSERT INTO member_trip_plan (
+		trip_plan_id,
+		member_id,
+		start_date,
+		end_date,
+		count_people,
+		count_pet,
+		title_override,
+		is_public,
+		created_at  
+		)
+		VALUES (
+		#{tripPlan.id},
+		#{member.id},
+		#{startDate},
+		#{endDate},
+		#{countPeople},
+		#{countPet},
+		#{titleOverride},
+		false,
+		#{createdAt}  
+		)
+	</insert>
+
+	<select id="existsByMemberIdAndTripPlanId" resultType="boolean">
+		SELECT
+		COUNT(*) > 0
+		FROM member_trip_plan
+		WHERE member_id = #{memberId}
+		AND
+		trip_plan_id = #{tripPlanId}
+	</select>
+
+	<!-- 수정 -->
+	<update id="update"
+		parameterType="com.ssdam.tripPaw.domain.MemberTripPlan">
+		UPDATE member_trip_plan
+		SET
+		title_override =
+		#{titleOverride},
+		is_public = #{publicVisible},
+		start_date =
+		#{startDate},
+		end_date = #{endDate},
+		status = #{status},
+		count_people =
+		#{countPeople},
+		count_pet = #{countPet},
+		image_url = #{imageUrl}
+		WHERE id
+		= #{id}
+	</update>
+
+	<!--delete -->
+	<delete id="delete" parameterType="long">
+		DELETE FROM member_trip_plan
+		WHERE id = #{id}
+	</delete>
+
+</mapper>

@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.ssdam.tripPaw.review.ReservForReviewMapper">
+
+	<resultMap id="ReservResultMap"
+		type="com.ssdam.tripPaw.domain.Reserv">
+		<id property="id" column="id" />
+		<result property="countPeople" column="count_people" />
+		<result property="countPet" column="count_pet" />
+		<result property="createdAt" column="created_at" />
+		<result property="deleteAt" column="delete_at" />
+		<result property="startDate" column="start_date" />
+		<result property="endDate" column="end_date" />
+		<result property="expireAt" column="expire_at" />
+		<result property="state" column="state" />
+		<result property="originalPrice" column="original_price" />
+		<result property="finalPrice" column="final_price" />
+		<association property="member"
+			javaType="com.ssdam.tripPaw.domain.Member">
+			<id property="id" column="member_id" />
+			<result property="username" column="member_username" />
+		</association>
+	</resultMap>
+
+	<resultMap id="ReservWithPlaceResultMap"
+		type="com.ssdam.tripPaw.domain.Reserv" extends="ReservResultMap">
+		<association property="place"
+			javaType="com.ssdam.tripPaw.domain.Place" columnPrefix="p_">
+			<id property="id" column="id" />
+			<result property="name" column="p_name" />
+			<result property="latitude" column="p_latitude" />
+			<result property="longitude" column="p_longitude" />
+			<result property="region" column="p_region" />
+			<result property="imageUrl" column="p_image_url" />
+		</association>
+	</resultMap>
+
+	<resultMap id="ReservWithReviewResultMap"
+		type="com.ssdam.tripPaw.review.ReservWithReviewDto">
+		<id property="id" column="id" />
+		<result property="startDate" column="start_date" />
+		<result property="endDate" column="end_date" />
+		<result property="state" column="state" />
+		<result property="isReviewed" column="is_reviewed" />
+	</resultMap>
+
+	<resultMap id="ReservWithPlaceMap"
+		type="com.ssdam.tripPaw.domain.Reserv">
+		<id property="id" column="id" />
+		<result property="countPeople" column="count_people" />
+		<result property="countPet" column="count_pet" />
+		<result property="createdAt" column="created_at" />
+		<result property="deleteAt" column="delete_at" />
+		<result property="startDate" column="start_date" />
+		<result property="endDate" column="end_date" />
+		<result property="expireAt" column="expire_at" />
+		<result property="state" column="state" />
+		<result property="originalPrice" column="original_price" />
+		<result property="finalPrice" column="final_price" />
+
+		<association property="place"
+			javaType="com.ssdam.tripPaw.domain.Place">
+			<id property="id" column="p_id" />
+			<result property="name" column="p_name" />
+			<result property="imageUrl" column="p_image_url" />
+			<result property="latitude" column="p_latitude" />
+			<result property="longitude" column="p_longitude" />
+			<result property="region" column="p_region" />
+		</association>
+	</resultMap>
+
+
+
+	<select id="findOneByMemberAndPlace" resultMap="ReservResultMap">
+		SELECT r.*, p.id
+		AS place_id, p.name AS place_name, p.latitude, p.longitude,
+		p.region,
+		m.id AS member_id, m.username AS member_username
+		FROM reserv r
+		JOIN
+		place p ON r.place_id = p.id
+		JOIN member m ON r.member_id = m.id
+		WHERE
+		r.member_id = #{memberId}
+		AND r.place_id = #{placeId}
+		AND r.delete_at IS
+		NULL
+		AND r.state IN ('CONFIRMED', 'WAITING')
+		ORDER BY r.start_date DESC
+		LIMIT 1
+	</select>
+
+	<select id="countByMemberAndPlace" resultType="int">
+		SELECT COUNT(*)
+		FROM reserv
+		WHERE member_id = #{memberId}
+		AND place_id = #{placeId}
+		AND
+		delete_at IS NULL
+		AND state = 'CONFIRMED'
+	</select>
+
+	<select id="countByMemberAndTripPlan" resultType="int">
+		SELECT COUNT(*)
+		FROM reserv
+		WHERE member_id = #{memberId}
+		AND reserv_id IN (
+		SELECT
+		reserv_id
+		FROM member_trip_plan
+		WHERE trip_plan_id = #{tripPlanId}
+		)
+		AND
+		delete_at IS NULL
+		AND state = 'CONFIRMED'
+	</select>
+
+	<select id="findByTripPlanIdAndMember"
+		resultMap="ReservWithPlaceResultMap">
+		SELECT
+		r.*,
+		p.id AS p_id,
+		p.name AS p_name,
+		p.latitude AS
+		p_latitude,
+		p.longitude AS p_longitude,
+		p.region AS p_region,
+		p.image_url AS p_image_url
+		FROM reserv r
+		JOIN place p ON r.place_id =
+		p.id
+		WHERE r.trip_plan_id = #{tripPlanId}
+		AND r.member_id = #{memberId}
+		AND r.delete_at IS NULL
+		ORDER BY r.start_date ASC
+	</select>
+
+	<select id="findAllWithReviewStatus"
+		resultMap="ReservWithReviewResultMap">
+		SELECT
+		r.id,
+		r.start_date,
+		r.end_date,
+		r.state,
+		EXISTS (
+		SELECT 1
+		FROM review rv
+		WHERE rv.reserv_id = r.id
+		) AS is_reviewed
+		FROM reserv r
+		WHERE r.member_id = #{memberId}
+		ORDER BY r.start_date DESC
+	</select>
+
+	<select id="findByTripPlanIdAndMemberJoinMTP"
+		resultMap="ReservWithPlaceResultMap">
+		SELECT
+		r.*,
+		p.id AS p_id,
+		p.name AS p_name,
+		p.latitude AS
+		p_latitude,
+		p.longitude AS p_longitude,
+		p.region AS p_region,
+		p.image_url AS p_image_url
+		FROM reserv r
+		JOIN member_trip_plan mtp ON
+		r.member_trip_plan_id = mtp.id
+		JOIN place p ON r.place_id = p.id
+		WHERE
+		mtp.trip_plan_id = #{tripPlanId}
+		AND mtp.member_id = #{memberId}
+		AND
+		r.delete_at IS NULL
+		AND r.state IN ('CONFIRMED', 'WAITING')
+		ORDER BY
+		r.start_date ASC
+		LIMIT 1
+	</select>
+
+	<select id="findReservByMemberAndTripPlan"
+		resultMap="ReservResultMap">
+		SELECT r.*
+		FROM reserv r
+		JOIN member_trip_plan mtp ON
+		r.member_trip_plan_id = mtp.id
+		WHERE mtp.trip_plan_id = #{tripPlanId}
+		AND mtp.member_id = #{memberId}
+		AND r.delete_at IS NULL
+		AND r.state =
+		'CONFIRMED'
+		ORDER BY r.start_date ASC
+		LIMIT 1
+	</select>
+
+	<select id="findByTripPlanId" parameterType="long"
+		resultMap="ReservResultMap">
+		SELECT *
+		FROM reserv
+		WHERE trip_plan_id = #{tripPlanId}
+		AND
+		delete_at IS NULL
+		ORDER BY start_date ASC
+		LIMIT 1
+	</select>
+
+	<select id="findReservsByTripPlanAndMember"
+		resultMap="ReservWithPlaceMap">
+		SELECT r.*,
+		p.id AS p_id,
+		p.name AS p_name,
+		p.image_url AS
+		p_image_url,
+		p.latitude AS p_latitude,
+		p.longitude AS p_longitude,
+		p.region AS p_region
+		FROM reserv r
+		JOIN member_trip_plan mtp ON
+		r.member_trip_plan_id = mtp.id
+		JOIN place p ON r.place_id = p.id
+		WHERE
+		mtp.trip_plan_id = #{tripPlanId}
+		AND mtp.member_id = #{memberId}
+	</select>
+
+</mapper>

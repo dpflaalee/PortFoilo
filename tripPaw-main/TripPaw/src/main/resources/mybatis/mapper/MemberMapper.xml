@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssdam.tripPaw.member.MemberMapper">
+<resultMap id="memberResultMap" type="com.ssdam.tripPaw.domain.Member">
+		<id property="id" column="id" />
+		<result property="username" column="username" />
+		<result property="password" column="password" />
+		<result property="nickname" column="nickname" />
+		<result property="email" column="email" />
+		<result property="zonecode" column="zonecode"/>
+		<result property="roadAddress" column="road_address" />
+		<!-- <result property="jibunAddress" column="jibunAddress" /> -->
+		<result property="namujiAddress" column="namuji_address" />
+		<result property="provider" column="provider" />
+		<result property="status" column="status"/>
+		<result property="createdAt" column="createdAt" />
+		<result property="deletedAt" column="deletedAt"/>
+		<!-- <result property="role" column="role" /> -->
+<collection property="role" ofType="com.ssdam.tripPaw.member.config.MemberRole">
+    <result property="roleName" column="role_name"/>     
+</collection>
+	</resultMap>
+	<!-- <select id="findMemberRoleTypeByMemberId">
+		select * from member_roles where member_id = #{memberId}
+	</select> -->
+	<insert id="insertMemberRole">
+		insert into member_roles (member_id
+								, role_name
+						) values ( 
+								#{memberId}
+								 ,#{memberRoleType}	)
+	</insert>
+  <select resultMap="memberResultMap"   id="findMemberById" >
+    select * from member where id = #{id}
+  </select>
+  <!-- SELECT -->
+  <select id="findByUsername" resultMap="memberResultMap">
+    SELECT *
+    FROM member m left join member_roles r 
+    on m.id = r.member_id 
+    where m.username = #{username}
+  </select>
+  
+  <select id="findByNickname" resultMap="memberResultMap">
+    SELECT m.*, r.role_name
+    FROM member m
+    LEFT JOIN member_roles r ON m.id = r.member_id
+    WHERE m.nickname = #{nickname}
+  </select>
+
+<select id="findById" resultMap="memberResultMap">
+  SELECT m.*, r.role_name
+  FROM member m LEFT JOIN member_roles r ON m.id = r.member_id
+  WHERE m.id = #{id}
+</select>
+
+  <select id="findAll" resultMap="memberResultMap">
+    SELECT * FROM member
+  </select>
+  
+  <select id="findAllByIds" parameterType="list" resultType="com.ssdam.tripPaw.domain.Member">
+	  SELECT * FROM member
+	  WHERE id IN
+	  <foreach item="id" collection="ids" open="(" separator="," close=")">
+	    #{id}
+	  </foreach>
+	</select>
+ 
+  <!-- INSERT -->
+  <insert id="insert" parameterType="Member">
+    INSERT INTO member (
+      username, password, email, nickname, provider, zonecode, road_address, namuji_address, status
+    ) VALUES (
+      #{username}, #{password}, #{email}, #{nickname}, #{provider}, #{zonecode}, #{roadAddress}, #{namujiAddress}, #{status}
+    )
+  </insert>
+  <!-- UPDATE -->
+  <update id="update" parameterType="Member">
+    UPDATE member
+    SET password = #{password},
+        email = #{email},
+        nickname = #{nickname},
+        provider = #{provider}
+    WHERE id = #{id}
+  </update>
+
+  <update id="updateByIdAndPassword">
+    UPDATE member
+    SET password = #{newPassword}
+    WHERE id = #{id} AND password = #{oldPassword}
+  </update>
+   <!-- DELETE -->
+  <delete id="delete">
+    DELETE FROM member WHERE id = #{id}
+  </delete>
+  
+
+  
+  <!-- 포인트 적립 내역 추가 (insert) -->
+  <insert id="insertPoints" parameterType="map">
+    INSERT INTO member_point (member_id, point)
+    VALUES (#{memberId}, #{points})
+  </insert>
+
+  <!-- 특정 회원의 전체 포인트 합산 조회 -->
+  <select id="getTotalPointsByMemberId" parameterType="long" resultType="int">
+    SELECT COALESCE(SUM(point), 0)
+    FROM member_point
+    WHERE member_id = #{memberId}
+  </select>
+  
+
+  <update id="updateMember" parameterType="Member">
+  	update member
+  	set username = #{username}
+  		,nickname = #{nickname}
+  		,password = #{password}
+  		,zonecode = #{zonecode}
+  		,road_address = #{roadAddress}
+  		,namuji_address= #{namujiAddress}
+  		,provider = #{provider}
+  	where id = #{id}
+  </update>
+
+  <select id="checkPassword" parameterType="Member">
+  	select count(*)
+  	from member
+  	where id = #{id} and password = #{newPass}
+  </select>
+  <update id="softDeleteMember">
+  	update member set status = #{status}
+  		where id = #{id}
+  </update>
+
+</mapper>

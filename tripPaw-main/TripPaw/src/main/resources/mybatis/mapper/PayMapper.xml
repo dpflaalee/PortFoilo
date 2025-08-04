@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.pay.PayMapper">
+	
+	<resultMap id="PayResultMap" type="com.ssdam.tripPaw.domain.Pay">
+	  <id property="id" column="id"/>
+	  <result property="impUid" column="imp_uid"/>
+	  <result property="merchantUid" column="merchant_uid"/>
+	  <result property="amount" column="amount"/>
+	  <result property="payMethod" column="pay_method"/>
+	  <result property="pgProvider" column="pg_provider"/>
+	  <result property="state" column="state"/>
+	  <result property="paidAt" column="paid_at"/>
+	  <result property="createdAt" column="created_at"/>
+	  <result property="deleteAt" column="delete_at"/>
+	  <result property="haspayShare" column="haspay_share"/>
+	  <result property="isGroup" column="is_group"/>
+	  <result property="groupId" column="group_id"/>
+	  
+	  <association property="reserv" javaType="com.ssdam.tripPaw.domain.Reserv">
+	    <id property="id" column="reserv_id"/>
+	    <result property="startDate" column="start_date"/>
+	    <result property="endDate" column="end_date"/>
+	    <result property="countPeople" column="count_people"/>
+	    <result property="countPet" column="count_pet"/>
+	    <result property="state" column="state_reserv" javaType="com.ssdam.tripPaw.reserv.ReservState" jdbcType="VARCHAR"/>
+	    <result property="reserv.memberTripPlanId" column="member_trip_plan_id"/>
+	    
+	      <association property="place" javaType="com.ssdam.tripPaw.domain.Place">
+		    <id property="id" column="place_id"/>
+		    <result property="name" column="place_name"/>
+		  </association>
+	  </association>
+	  
+	  <association property="member" javaType="com.ssdam.tripPaw.domain.Member">
+	    <id property="id" column="member_id"/>
+	    <result property="username" column="username"/>
+	  </association>
+	</resultMap>
+
+  <!-- 조회 -->
+	<select id="findById" parameterType="long" resultMap="PayResultMap">
+	  SELECT 
+	    p.id, p.imp_uid, p.merchant_uid, p.amount, p.pay_method, p.pg_provider, 
+	    p.state, p.paid_at, p.delete_at, p.created_at, p.haspay_share,
+	    
+	    r.id AS reserv_id, r.start_date, r.end_date, r.expire_at, 
+	    r.delete_at AS delete_at_reserv, r.state AS state_reserv, 
+	    r.created_at AS created_at_reserv,
+	    r.original_price, r.final_price, r.count_people, r.count_pet,
+	    r.member_trip_plan_id AS member_trip_plan_id,
+	    
+	    pl.id AS place_id, pl.name AS place_name,
+	    
+	    m.id AS member_id, m.username
+	    
+	  FROM pay p
+	  LEFT JOIN reserv r ON p.reserv_id = r.id
+	  LEFT JOIN place pl ON r.place_id = pl.id
+	  LEFT JOIN member m ON p.member_id = m.id
+	  WHERE p.id = #{id}
+	</select>
+
+  <!-- 전체 조회 -->
+	<select id="findAll" resultMap="PayResultMap">
+	  SELECT 
+	    p.id, p.imp_uid, p.merchant_uid, p.amount, p.pay_method, p.pg_provider, 
+	    p.state, p.paid_at, p.delete_at, p.created_at,
+	
+	    r.id AS reserv_id, r.start_date, r.end_date, r.expire_at, 
+	    r.delete_at AS delete_at_reserv, r.state AS state_reserv, 
+	    r.created_at AS created_at_reserv,
+	    r.original_price, r.final_price, r.count_people, r.count_pet,
+	
+	    pl.id AS place_id, pl.name AS place_name,
+	    m.id AS member_id, m.username
+	
+	  FROM pay p
+	  LEFT JOIN reserv r ON p.reserv_id = r.id
+	  LEFT JOIN place pl ON r.place_id = pl.id
+	  LEFT JOIN member m ON p.member_id = m.id
+	  ORDER BY p.created_at DESC
+	</select>
+
+	<select id="findByReservId" parameterType="long" resultMap="PayResultMap">
+	  SELECT 
+	    p.*, 
+	    r.id AS reserv_id, r.start_date, r.end_date, r.count_people, r.count_pet,
+	    m.id AS member_id, m.username
+	  FROM pay p
+	  JOIN reserv r ON p.reserv_id = r.id
+	  JOIN member m ON p.member_id = m.id
+	  WHERE p.reserv_id = #{reservId}
+	</select>
+
+	<select id="findByImpUid" parameterType="String" resultMap="PayResultMap">
+	  SELECT 
+	    p.id, p.imp_uid, p.merchant_uid, p.amount, p.pay_method, p.pg_provider, 
+	    p.state, p.paid_at, p.delete_at, p.created_at, p.haspay_share,
+	    
+	    r.id AS reserv_id, r.start_date, r.end_date, r.expire_at, 
+	    r.delete_at AS delete_at_reserv, r.state AS state_reserv, 
+	    r.created_at AS created_at_reserv,
+	    r.original_price, r.final_price, r.count_people, r.count_pet,
+	    
+	    pl.id AS place_id, pl.name AS place_name,
+	    
+	    m.id AS member_id, m.username
+	    
+	  FROM pay p
+	  LEFT JOIN reserv r ON p.reserv_id = r.id
+	  LEFT JOIN place pl ON r.place_id = pl.id
+	  LEFT JOIN member m ON p.member_id = m.id
+	  WHERE p.imp_uid = #{impUid}
+	</select>
+	
+    <update id="updateStateByImpUid">
+        UPDATE pay SET state = #{state} WHERE imp_uid = #{impUid}
+    </update>
+
+  <!-- 삽입 -->
+	<insert id="insert" parameterType="com.ssdam.tripPaw.domain.Pay" useGeneratedKeys="true" keyProperty="id">
+	    INSERT INTO pay (
+	        imp_uid, merchant_uid, amount, pay_method, pg_provider,
+	        state, paid_at, created_at,
+	        <if test="reserv != null"> reserv_id, </if>
+	        member_id, haspay_share,
+	        is_group, group_id
+	    ) VALUES (
+	        #{impUid}, #{merchantUid}, #{amount}, #{payMethod}, #{pgProvider},
+	        #{state}, #{paidAt}, #{createdAt},
+	        <if test="reserv != null"> #{reserv.id}, </if>
+	        #{member.id}, #{haspayShare},
+	        #{isGroup}, #{groupId}
+	    )
+	</insert>
+
+  <!-- 상태 업데이트 -->
+  <update id="updateByState" parameterType="com.ssdam.tripPaw.domain.Pay">
+    UPDATE pay
+    SET state = #{state}
+    WHERE id = #{id}
+  </update>
+
+	<!-- 단일 결제 soft delete -->
+	<update id="softDelete" parameterType="long">
+	  UPDATE pay SET delete_at = NOW() WHERE id = #{id} AND delete_at IS NULL
+	</update>
+	
+	<!-- 그룹 결제 soft delete -->
+	<update id="softDeleteByGroupId" parameterType="long">
+	  UPDATE pay SET delete_at = NOW() WHERE group_id = #{groupId} AND delete_at IS NULL
+	</update>
+	
+</mapper>

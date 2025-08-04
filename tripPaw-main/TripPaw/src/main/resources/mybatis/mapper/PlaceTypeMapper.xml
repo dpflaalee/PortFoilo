@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.place.PlaceTypeMapper">
+
+	<select id="findAll" resultType="com.ssdam.tripPaw.domain.PlaceType">
+	    SELECT * FROM place_type
+	</select>
+
+    <select id="findByName" resultType="com.ssdam.tripPaw.domain.PlaceType">
+        SELECT * FROM place_type WHERE name = #{name}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO place_type (name)
+        VALUES (#{name})
+    </insert>
+
+</mapper>

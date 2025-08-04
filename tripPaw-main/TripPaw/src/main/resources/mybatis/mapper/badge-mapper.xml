@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.badge.BadgeMapper">
+
+    <!-- 자동 삽입 or 업데이트 -->
+    <insert id="insertOrUpdateBadge">
+        INSERT INTO badge (id, name, description, image_url, weight)
+        VALUES (#{id}, #{name}, #{description}, #{imageUrl}, #{weight})
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            description = VALUES(description),
+            image_url = VALUES(image_url),
+            weight = VALUES(weight)
+    </insert>
+
+    <insert id="insertBadge">
+        INSERT INTO badge (name, description, image_url, weight)
+        VALUES (#{name}, #{description}, #{imageUrl}, #{weight})
+    </insert>
+
+    <update id="updateBadge">
+        UPDATE badge
+        SET name = #{name},
+            description = #{description},
+            image_url = #{imageUrl},
+            weight = #{weight}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteBadge">
+        DELETE FROM badge WHERE id = #{id}
+    </delete>
+
+    <select id="findById" resultType="com.ssdam.tripPaw.domain.Badge">
+        SELECT 
+            id,
+            name,
+            description,
+            image_url AS imageUrl,
+            weight
+        FROM badge
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultType="com.ssdam.tripPaw.domain.Badge">
+        SELECT 
+            id,
+            name,
+            description,
+            image_url AS imageUrl,
+            weight
+        FROM badge
+    </select>
+
+</mapper>

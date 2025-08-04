@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssdam.tripPaw.review.MemberBadgeMapper">
+
+	<select id="getTotalContentLengthByMemberId" resultType="int">
+	    SELECT COALESCE(SUM(CHAR_LENGTH(content)), 0)
+	    FROM review
+	    WHERE member_id = #{memberId}
+	</select>
+	
+	<select id="findEligibleBadges" resultType="com.ssdam.tripPaw.domain.Badge">
+	    SELECT id, name, description, image_url AS imageUrl, weight
+	    FROM badge
+	    WHERE weight &lt;= #{totalContentLength}
+	</select>
+
+	<insert id="insertMemberBadge">
+	    INSERT IGNORE INTO member_badge (member_id, badge_id)
+	    VALUES (#{memberId}, #{badgeId})
+	</insert>
+
+    <select id="findBadgesByMemberId" resultType="com.ssdam.tripPaw.domain.Badge">
+	    SELECT 
+	        b.id,
+	        b.name,
+	        b.description,
+	        b.image_url AS imageUrl,
+	        b.weight
+	    FROM badge b
+	    JOIN member_badge mb ON b.id = mb.badge_id
+	    WHERE mb.member_id = #{memberId}
+	</select>
+	
+	<select id="hasBadge" resultType="boolean">
+	    SELECT COUNT(*) > 0
+	    FROM member_badge
+	    WHERE member_id = #{memberId}
+	      AND badge_id = #{badgeId}
+	</select>
+	
+
+</mapper>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+
+<th:block layout:fragment="content">
+	<div class="container-fluid p-3">
+		<div class="d-flex bd-highlight mb-3">
+			<div class="container p-2 bd-highlight  align-self-center"
+				style="width: 100%;">
+				<th:block th:each="group : ${groupList}">
+					<ul class="list-unstyled d-flex justify-content-between"
+						style="border-bottom: 1px solid #ccc; padding: 10px 0 30px;">
+						<li>
+							<ul class="list-unstyled">
+								<li style="color: #000000; font-weight: bold; font-size: 20px;"
+									th:text="${group.badge.badge_title}"></li>
+								<li style="color: #000000; font-weight: bold; font-size: 20px;"><a
+									th:href="@{|/group/group/${group.id}|}"
+									th:text="${group.group_title}"></a></li>
+								<li style="font-size: 16px; color: #9d9d9d;"
+									th:text="${group.group_content}"></li>
+							</ul>
+						</li>
+						<li>
+							<div class="ms-auto p-2 bd-highlight align-self-center"
+								style="width: 100%; text-align: end;">
+								<button type="button" class="btn"
+									style="background-color: #f8b739; color: white; font-weight: bold;"
+									th:attr="onclick=|openJoinGroupModal('${group.id}')|">
+									가입하기</button>
+							</div>
+						</li>
+					</ul>
+				</th:block>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal fade" id="joinModal" tabindex="-1"
+		aria-labelledby="joinModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-body">
+					<form id="joinGroupForm" method="post">
+						<p style="text-align: center; padding-top: 2em; color: #000;">가입하시겠습니까?</p>
+						<div class="modal-footer justify-content-center">
+							<div>
+								<button type="reset" class="btn btn-secondary p-2"
+									data-bs-dismiss="modal">취소</button>
+							</div>
+							<div>
+								<button type="submit" class="btn btn-primary p-2">가입하기</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script th:if="${message}" th:inline="javascript">
+    	alert([[${message}]]);
+	</script>
+	<script>
+		function openJoinGroupModal(id) {
+			document.getElementById("joinGroupForm").action = `/group/join/${id}`;
+			const modal = new bootstrap.Modal(document.getElementById('joinModal'));
+			modal.show();
+		}
+		
+	</script>
+</th:block>
+
+
+</html>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper	namespace="com.ssdam.tripPaw.checklist.CheckTemplateItemMapper">
+
+	<!-- 멤버 아이디로 조회 -->
+	<select id="selectItemsByMemberIds" resultMap="ItemResultMap">
+		SELECT i.id, i.checktemplate_id, i.content, i.created_at
+		FROM check_template_item i
+		JOIN check_template t ON i.checktemplate_id = t.id
+		WHERE t.member_id IN
+		<foreach item="id" collection="memberIds" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+
+	<!-- 기존항목조회 -->
+	<select id="selectItemsByIds" resultMap="ItemResultMap">
+		SELECT id, checktemplate_id, content, created_at
+		FROM
+		check_template_item
+		WHERE id IN
+		<foreach item="id" collection="ids" open="(" separator=","
+			close=")">
+			#{id}
+		</foreach>
+	</select>
+
+	<!-- 전체조회 -->
+	<select id="selectAllItems" resultMap="ItemResultMap">
+		SELECT id, checktemplate_id, content, created_at
+		FROM check_template_item
+		ORDER BY created_at DESC
+	</select>
+
+	<!-- 다중삽입 bulk insert -->
+	<insert id="insertTemplateItems">
+		INSERT INTO check_template_item (checktemplate_id, content,	created_at)
+		VALUES
+		<foreach collection="items" item="item" separator=",">
+			(#{item.checktemplateId}, #{item.content}, now())
+		</foreach>
+	</insert>
+	<!-- 다중삽입 bulk insert -->
+
+	<!-- 단일생성 -->
+	<insert id="insertTemplateItem" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO check_template_item (checktemplate_id, content, created_at)
+		VALUES (#{checktemplateId}, #{content}, now())
+	</insert>
+
+	<!-- 단일수정 -->
+	<update id="updateTemplateItem">
+		UPDATE check_template_item
+		SET content = #{content}
+		WHERE id = #{id}
+	</update>
+	<!-- 단일수정 -->
+
+	<!-- 단일 항목 삭제 -->
+	<delete id="deleteItemById">
+		DELETE FROM check_template_item
+		WHERE id = #{id}
+	</delete>
+	
+<!-- 템플릿 ID 기준으로 항목 조회 -->
+<select id="selectItemsByTemplateId" resultMap="ItemResultMap">
+    SELECT id, checktemplate_id, content, created_at
+    FROM check_template_item
+    WHERE checktemplate_id = #{templateId}
+    ORDER BY created_at
+</select>
+
+
+	<resultMap id="ItemResultMap" type="CheckTemplateItem">
+		<id property="id" column="id" />
+		<result property="content" column="content" />
+		<result property="createdAt" column="created_at" />
+		<result property="checktemplateId" column="checktemplate_id" />
+
+		<association property="checkTemplate"
+			javaType="CheckTemplate">
+			<id property="id" column="checktemplate_id" />
+		</association>
+	</resultMap>
+
+</mapper>

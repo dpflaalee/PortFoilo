@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.nft.NftMetadataMapper">
+
+  <!-- 전체 조회 -->
+  <select id="findAll" resultType="com.ssdam.tripPaw.domain.NftMetadata">
+    SELECT id, token_id AS tokenId, title, image_url AS imageUrl, point_value AS pointValue, issued_at AS issuedAt
+    FROM nft_metadata
+  </select>
+
+  <!-- ID로 조회 -->
+  <select id="findById" parameterType="long" resultType="com.ssdam.tripPaw.domain.NftMetadata">
+    SELECT id, token_id AS tokenId, title, image_url AS imageUrl, point_value AS pointValue, issued_at AS issuedAt
+    FROM nft_metadata
+    WHERE id = #{id}
+  </select>
+
+  <!-- TokenId로 조회 -->
+  <select id="findByTokenId" parameterType="long" resultType="com.ssdam.tripPaw.domain.NftMetadata">
+    SELECT id, token_id AS tokenId, title, image_url AS imageUrl, point_value AS pointValue, issued_at AS issuedAt
+    FROM nft_metadata
+    WHERE token_id = #{tokenId}
+  </select>
+
+  <!-- 삽입 -->
+  <insert id="insert" parameterType="com.ssdam.tripPaw.domain.NftMetadata" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO nft_metadata (token_id, title, image_url, point_value, issued_at)
+    VALUES (#{tokenId}, #{title}, #{imageUrl}, #{pointValue}, NOW())
+  </insert>
+
+  <!-- 수정 -->
+  <update id="update" parameterType="com.ssdam.tripPaw.domain.NftMetadata">
+    UPDATE nft_metadata
+    SET title = #{title},
+        image_url = #{imageUrl},
+        point_value = #{pointValue}
+    WHERE id = #{id}
+  </update>
+
+  <!-- 삭제 -->
+  <delete id="delete" parameterType="long">
+    DELETE FROM nft_metadata WHERE id = #{id}
+  </delete>
+  
+  <!-- nft 발급 -->
+  <select id="findFirstUnused" resultType="com.ssdam.tripPaw.domain.NftMetadata">
+    SELECT id, token_id AS tokenId, title, image_url AS imageUrl, point_value AS pointValue, issued_at AS issuedAt
+    FROM nft_metadata
+    WHERE token_id IS NOT NULL
+      AND id NOT IN (
+        SELECT nft_metadata_id FROM member_nft WHERE deleted_at IS NULL
+      )
+    ORDER BY token_id ASC
+    LIMIT 1
+  </select>
+ 
+  <!-- soft delete -->
+  <update id="softDelete" parameterType="long">
+    UPDATE nft_metadata
+    SET deleted_at = NOW()
+    WHERE id = #{id}
+      AND deleted_at IS NULL
+  </update>
+
+  <select id="existsByTitle" resultType="boolean">
+    SELECT COUNT(*) > 0 FROM nft_metadata WHERE title = #{title}
+  </select>
+
+</mapper>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper	namespace="com.ssdam.tripPaw.checklist.MemberCheckMapper">
+
+	<!-- 체크리스트 삽입 -->
+	<insert id="insertMemberCheck" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member_check (custom_content, is_checked, created_at, checkroutine_id, checktemplateitem_id)
+        VALUES (#{customContent}, #{isChecked}, now(), #{checkRoutine.id}, #{checkTemplateItem.id})
+    </insert>
+
+	<!-- 루틴기준 체크리스트 조회 -->
+    <select id="selectByRoutineId" resultMap="MemberCheckResultMap">
+	    SELECT mc.id, mc.custom_content, mc.is_checked, mc.created_at, 
+	           mc.checkroutine_id, mc.checktemplateitem_id,
+	           cti.content AS cti_content
+	    FROM member_check mc
+	    LEFT JOIN check_template_item cti ON mc.checktemplateitem_id = cti.id
+	    WHERE mc.checkroutine_id = #{routineId}
+	    ORDER BY mc.created_at
+	</select>
+
+	<!-- 멤버 기준 체크리스트 조회 -->
+	<select id="selectByMemberId" resultMap="MemberCheckResultMap">
+		SELECT mc.*
+		FROM member_check mc
+		JOIN check_routine cr ON mc.checkroutine_id = cr.id
+		WHERE cr.member_id = #{memberId}
+		ORDER BY mc.created_at
+	</select>
+
+	<!--경로별 체크리스트 조회-->
+	<select id="selectByRouteId" resultMap="MemberCheckResultMap">
+		SELECT mc.*
+		FROM member_check mc
+		JOIN check_routine cr ON mc.checkroutine_id = cr.id
+		WHERE cr.route_id = #{routeId}
+		ORDER BY mc.created_at
+	</select>
+
+	<!-- 유저체크리스트 수정 -->
+	<update id="updateMemberCheck">
+		UPDATE member_check
+		SET custom_content = #{customContent}, is_checked = #{isChecked}
+		WHERE id = #{id}
+	</update>
+
+	<!-- 유저체크리스트 삭제 -->
+    <delete id="deleteMemberCheckById">
+        DELETE FROM member_check WHERE id = #{id}
+    </delete>
+
+	<!-- 루틴전체 체크리스트 삭제 -->
+    <delete id="deleteByRoutineId">
+        DELETE FROM member_check WHERE checkroutine_id = #{routineId}
+    </delete>
+
+    <resultMap id="MemberCheckResultMap" type="com.ssdam.tripPaw.domain.MemberCheck">
+        <id property="id" column="id"/>
+        <result property="customContent" column="custom_content"/>
+        <result property="isChecked" column="is_checked"/>
+        <result property="createdAt" column="created_at"/>
+
+        <association property="checkTemplateItem" javaType="com.ssdam.tripPaw.domain.CheckTemplateItem">
+            <id property="id" column="checktemplateitem_id"/>
+            <result property="content" column="cti_content"/>
+        </association>
+    </resultMap>
+
+</mapper>

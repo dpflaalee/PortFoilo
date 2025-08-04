@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.place.PlaceMapper">
+
+	<!-- 결과 매핑 -->
+	<resultMap id="placeResultMap"
+		type="com.ssdam.tripPaw.domain.Place">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="description" column="description" />
+		<result property="latitude" column="latitude" />
+		<result property="longitude" column="longitude" />
+		<result property="region" column="region" />
+		<result property="openHours" column="open_hours" />
+		<result property="petFriendly" column="pet_friendly" />
+		<result property="petVerified" column="pet_verified" />
+		<result property="restDays" column="rest_days" />
+		<result property="price" column="price" />
+		<result property="phone" column="phone" />
+		<result property="parking" column="parking" />
+		<result property="imageUrl" column="image_url" />
+		<result property="homePage" column="home_page" />
+		<result property="externalContentId"
+			column="external_content_id" />
+		<result property="source" column="source" />
+		<association property="placeType"
+			javaType="com.ssdam.tripPaw.domain.PlaceType">
+			<id property="id" column="place_type_id" />
+		</association>
+	</resultMap>
+
+	<!-- insert -->
+	<insert id="insert"
+		parameterType="com.ssdam.tripPaw.domain.Place" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO place (
+		name, description, latitude,
+		longitude,
+		region, open_hours,
+		pet_friendly, pet_verified, rest_days,
+		price, phone,
+		image_url, parking,
+		home_page, external_content_id, source,
+		place_type_id
+		)
+		VALUES (
+		#{name}, #{description}, #{latitude},
+		#{longitude}, #{region}, #{openHours},
+		#{petFriendly}, #{petVerified},
+		#{restDays}, #{price}, #{phone},
+		#{imageUrl}, #{parking}, #{homePage},
+		#{externalContentId}, #{source}, #{placeType.id}
+		)
+	</insert>
+
+	<!-- select all -->
+	<select id="findAll" resultMap="placeResultMap">
+		SELECT * FROM place
+	</select>
+
+	<!-- select by id -->
+	<select id="findById" resultMap="placeResultMap">
+		SELECT * FROM place WHERE id =
+		#{id}
+	</select>
+
+	<!-- 램덤 추천 -->
+	<select id="findFirstRandomPlaceExcluding"
+		resultMap="placeResultMap">
+		SELECT *
+		FROM place
+		WHERE place_type_id IN (1, 2)
+		AND region LIKE
+		CONCAT('%', #{region}, '%')
+		<if test="excludedIds != null and excludedIds.size() > 0">
+			AND id NOT IN
+			<foreach collection="excludedIds" item="id" open="("
+				separator="," close=")">
+				#{id}
+			</foreach>
+		</if>
+		ORDER BY RAND()
+		LIMIT 1
+	</select>
+
+<select id="findPlacesByTypeAndDistanceExcluding" resultMap="placeResultMap">
+  SELECT *
+  FROM (
+    SELECT 
+      p.*, 
+      (6371 * acos(
+        cos(radians(#{baseLat})) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(#{baseLng})) +
+        sin(radians(#{baseLat})) * sin(radians(p.latitude))
+      )) AS distance
+    FROM place p
+    WHERE p.region LIKE CONCAT('%', #{region}, '%')
+    <if test="excludedIds != null and excludedIds.size() > 0">
+      AND p.id NOT IN
+      <foreach collection="excludedIds" item="id" open="(" separator="," close=")">
+        #{id}
+      </foreach>
+    </if>
+    AND p.place_type_id = #{placeType}
+  ) AS result
+  ORDER BY distance ASC
+  LIMIT #{limit}
+</select>
+
+
+
+
+
+	<!-- 상세보기 -->
+	<resultMap id="placeDetailResultMap"
+		type="com.ssdam.tripPaw.domain.Place">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="description" column="description" />
+		<result property="latitude" column="latitude" />
+		<result property="longitude" column="longitude" />
+		<result property="region" column="region" />
+		<result property="openHours" column="open_hours" />
+		<result property="petFriendly" column="pet_friendly" />
+		<result property="petVerified" column="pet_verified" />
+		<result property="restDays" column="rest_days" />
+		<result property="price" column="price" />
+		<result property="parking" column="parking" />
+		<result property="phone" column="phone" />
+		<result property="imageUrl" column="image_url" />
+		<result property="homePage" column="home_page" />
+		<result property="externalContentId"
+			column="external_content_id" />
+		<result property="source" column="source" />
+
+		<association property="placeType"
+			javaType="com.ssdam.tripPaw.domain.PlaceType">
+			<id property="id" column="place_type_id" />
+			<result property="name" column="place_type_name" />
+		</association>
+
+		<collection property="placeImages"
+			ofType="com.ssdam.tripPaw.domain.PlaceImage"
+			select="findImagesByPlaceId" column="id" />
+
+		<collection property="reviews"
+			ofType="com.ssdam.tripPaw.domain.Review"
+			select="findReviewsByPlaceId" column="id" />
+
+		<collection property="categories"
+			ofType="com.ssdam.tripPaw.domain.Category"
+			select="findCategoriesByPlaceId" column="id" />
+	</resultMap>
+
+	<select id="findByIdWithAll" resultMap="placeDetailResultMap">
+		SELECT
+		p.*,
+		pt.id AS
+		place_type_id,
+		pt.name AS place_type_name
+		FROM place p
+		LEFT JOIN
+		place_type pt ON p.place_type_id = pt.id
+		WHERE p.id = #{id}
+	</select>
+
+	<select id="findImagesByPlaceId"
+		resultType="com.ssdam.tripPaw.domain.PlaceImage">
+		SELECT id, place_id, image_url
+		FROM place_image
+		WHERE
+		place_id = #{id}
+	</select>
+
+	<select id="findReviewsByPlaceId"
+		resultType="com.ssdam.tripPaw.domain.Review">
+		SELECT id, content, rating, created_at, updated_at,
+		target_id
+		FROM review
+		WHERE target_id = #{id} AND review_type_id = 2
+	</select>
+
+	<select id="findCategoriesByPlaceId"
+		resultType="com.ssdam.tripPaw.domain.Category">
+		SELECT c.id, c.name
+		FROM category c
+		JOIN place_category pc ON
+		c.id = pc.category_id
+		WHERE pc.place_id = #{id}
+	</select>
+
+
+
+
+
+	<!-- update -->
+	<update id="update"
+		parameterType="com.ssdam.tripPaw.domain.Place">
+		UPDATE place
+		SET
+		name = #{name},
+		description =
+		#{description},
+		latitude = #{latitude},
+		longitude = #{longitude},
+		region
+		=
+		#{region},
+		open_hours = #{openHours},
+		pet_friendly = #{petFriendly},
+		pet_verified = #{petVerified},
+		rest_days = #{restDays},
+		price =
+		#{price},
+		phone = #{phone},
+		image_url = #{imageUrl},
+		home_page =
+		#{homePage},
+		external_content_id = #{externalContentId},
+		source =
+		#{source}
+		WHERE id = #{id}
+	</update>
+
+</mapper>

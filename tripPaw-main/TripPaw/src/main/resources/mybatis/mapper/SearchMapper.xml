@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.search.SearchMapper">
+
+	<!-- 여행 코스 검색 -->
+	<resultMap id="searchTripPlanMap"
+		type="com.ssdam.tripPaw.domain.TripPlan">
+		<id property="id" column="tp_id" />
+		<result property="title" column="title" />
+		<result property="days" column="days" />
+		<result property="publicVisible" column="is_public" />
+		<result property="createdAt" column="created_at" />
+		<result property="imageUrl" column="image_url" />
+		<association property="member"
+			javaType="com.ssdam.tripPaw.domain.Member">
+			<id property="id" column="member_id" />
+			<result property="nickname" column="member_nickname" />
+		</association>
+
+		<collection property="tripPlanCourses"
+			ofType="com.ssdam.tripPaw.domain.TripPlanCourse">
+			<id property="id" column="c_id" />
+			<association property="route"
+				javaType="com.ssdam.tripPaw.domain.Route">
+				<id property="id" column="route_id" />
+				<collection property="routePlaces"
+					ofType="com.ssdam.tripPaw.domain.RoutePlace">
+					<id property="id" column="rp_id" />
+					<result property="sequence" column="sequence" />
+					<association property="place"
+						javaType="com.ssdam.tripPaw.domain.Place">
+						<id property="id" column="place_id" />
+						<result property="name" column="place_name" />
+						<result property="latitude" column="latitude" />
+						<result property="longitude" column="longitude" />
+					</association>
+				</collection>
+			</association>
+		</collection>
+
+		<collection property="reviews"
+			ofType="com.ssdam.tripPaw.domain.Review">
+			<id property="id" column="review_id" />
+			<result property="content" column="review_content" />
+			<result property="rating" column="rating" />
+			<result property="createdAt" column="review_created_at" />
+			<result property="updatedAt" column="review_updated_at" />
+			<result property="targetId" column="target_id" />
+		</collection>
+	</resultMap>
+
+	<!-- 장소 검색 -->
+	<resultMap id="searchPlaceResultMap"
+		type="com.ssdam.tripPaw.domain.Place">
+		<id property="id" column="place_id" />
+		<result property="name" column="place_name" />
+		<result property="description" column="description" />
+		<result property="latitude" column="latitude" />
+		<result property="longitude" column="longitude" />
+		<result property="region" column="region" />
+		<result property="openHours" column="open_hours" />
+		<result property="petFriendly" column="pet_friendly" />
+		<result property="petVerified" column="pet_verified" />
+		<result property="restDays" column="rest_days" />
+		<result property="price" column="price" />
+		<result property="parking" column="parking" />
+		<result property="phone" column="phone" />
+		<result property="imageUrl" column="image_url" />
+		<result property="homePage" column="home_page" />
+		<result property="externalContentId"
+			column="external_content_id" />
+		<result property="source" column="source" />
+
+		<association property="placeType"
+			javaType="com.ssdam.tripPaw.domain.PlaceType">
+			<id property="id" column="place_type_id" />
+			<result property="name" column="place_type_name" />
+		</association>
+
+		<collection property="placeImages"
+			ofType="com.ssdam.tripPaw.domain.PlaceImage">
+			<id property="id" column="place_image_id" />
+			<result property="imageUrl" column="place_image_url" />
+		</collection>
+
+		<collection property="reviews"
+			ofType="com.ssdam.tripPaw.domain.Review">
+			<id property="id" column="review_id" />
+			<result property="content" column="review_content" />
+			<result property="rating" column="rating" />
+			<result property="createdAt" column="review_created_at" />
+			<result property="updatedAt" column="review_updated_at" />
+			<result property="targetId" column="target_id" />
+		</collection>
+	</resultMap>
+
+	<!-- 장소 검색 쿼리 -->
+	<select id="findPlaceIdsByKeyword" resultType="long"
+		parameterType="map">
+		SELECT DISTINCT p.id
+		FROM place p
+		INNER JOIN place_type pt ON
+		p.place_type_id = pt.id
+		WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%',
+		#{keyword}, '%'))
+		OR LOWER(pt.name) LIKE LOWER(CONCAT('%', #{keyword},
+		'%')))
+		<if test="region != null and region != ''">
+			AND LOWER(p.region) LIKE LOWER(CONCAT('%', #{region},
+			'%'))
+		</if>
+		ORDER BY p.id
+		LIMIT 10 OFFSET #{offset}
+	</select>
+
+	<select id="findPlacesByIds" resultMap="searchPlaceResultMap"
+		parameterType="list">
+		SELECT
+		p.id AS place_id,
+		p.name AS place_name,
+		p.description,
+		p.latitude,
+		p.longitude,
+		p.region,
+		p.open_hours,
+		p.pet_friendly,
+		p.pet_verified,
+		p.rest_days,
+		p.price,
+		p.parking,
+		p.phone,
+		p.image_url,
+		p.home_page,
+		p.external_content_id,
+		p.source,
+
+		pt.id AS place_type_id,
+		pt.name AS
+		place_type_name,
+
+		r.id AS review_id,
+		r.content AS review_content,
+		r.rating,
+		r.created_at AS review_created_at,
+		r.updated_at AS
+		review_updated_at,
+		r.target_id,
+
+		pi.id AS place_image_id,
+		pi.image_url AS
+		place_image_url
+
+		FROM place p
+		INNER JOIN place_type pt ON p.place_type_id
+		= pt.id
+		LEFT JOIN review r ON p.id = r.target_id AND r.review_type_id =
+		2
+		LEFT JOIN place_image pi ON p.id = pi.place_id
+		WHERE p.id IN
+		<foreach item="id" collection="list" open="(" separator=","
+			close=")">
+			#{id}
+		</foreach>
+	</select>
+
+
+	<!-- 여행 코스 검색 쿼리 -->
+	<select id="findTripPlanIdsByKeyword" parameterType="map"
+		resultType="long">
+		SELECT DISTINCT tp.id
+		FROM trip_plan tp
+		WHERE tp.is_public = true
+		AND tp.title LIKE CONCAT('%', #{keyword}, '%')
+		ORDER BY tp.id DESC
+		LIMIT 10 OFFSET #{tripPlanOffset}
+	</select>
+
+	<select id="findTripPlansByIds" parameterType="list"
+		resultMap="searchTripPlanMap">
+		SELECT
+		tp.id AS tp_id,
+		tp.title,
+		tp.days,
+		tp.is_public,
+		tp.created_at,
+		tp.image_url,
+		m.nickname AS member_nickname,
+
+		c.id AS c_id,
+		r.id AS
+		route_id,
+		rp.id AS rp_id,
+		rp.sequence,
+		p.id AS place_id,
+		p.name AS
+		place_name,
+		p.latitude,
+		p.longitude,
+
+		rv.id AS review_id,
+		rv.content AS
+		review_content,
+		rv.rating,
+		rv.created_at AS review_created_at,
+		rv.updated_at AS review_updated_at,
+		rv.target_id
+
+		FROM trip_plan tp
+		JOIN
+		member m ON tp.member_id = m.id
+		JOIN trip_plan_course c ON tp.id =
+		c.trip_plan_id
+		JOIN route r ON c.route_id = r.id
+		JOIN route_place rp ON
+		r.id = rp.route_id
+		JOIN place p ON rp.place_id = p.id
+		LEFT JOIN review
+		rv ON tp.id = rv.target_id AND rv.review_type_id = 1
+		WHERE tp.id IN
+		<foreach item="id" collection="list" open="(" separator=","
+			close=")">
+			#{id}
+		</foreach>
+		ORDER BY tp.id DESC, c.id ASC, rp.sequence ASC
+	</select>
+
+
+</mapper>

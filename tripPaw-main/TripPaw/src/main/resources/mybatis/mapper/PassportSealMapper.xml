@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper	namespace="com.ssdam.tripPaw.petpass.seal.PassportSealMapper">
+	<resultMap id="PassportSealResultMap" type="com.ssdam.tripPaw.domain.PassportSeal">
+        <id property="id" column="id" />
+        <association property="passport" column="passport_id" javaType="com.ssdam.tripPaw.domain.PetPassport">
+            <id property="id" column="passport_id"/>
+        </association>
+        <association property="seal" column="seal_id" javaType="com.ssdam.tripPaw.domain.Seal">
+            <id property="id" column="seal_id"/>
+            <result property="name" column="seal_name"/>
+            <result property="imageUrl" column="seal_image"/>
+        </association>
+		<association property="review" column="review_id" javaType="com.ssdam.tripPaw.domain.Review">
+		  <id property="id" column="review_id"/>
+		  <result property="targetId" column="review_target_id"/>
+		</association>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.ssdam.tripPaw.domain.PassportSeal" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO passport_seal (passport_id, seal_id, review_id)
+        VALUES (#{passport.id}, #{seal.id}, #{review.id})
+    </insert>
+
+    <select id="findById" resultMap="PassportSealResultMap">
+        SELECT ps.id, ps.passport_id, ps.seal_id, ps.review_id,
+               s.name AS seal_name, s.image_url AS seal_image
+        FROM passport_seal ps
+        JOIN seal s ON ps.seal_id = s.id
+        WHERE ps.id = #{id}
+    </select>
+
+    <select id="findByPassportId" resultMap="PassportSealResultMap">
+  SELECT 
+    ps.id,
+    ps.passport_id,
+    ps.seal_id,
+    ps.review_id,
+
+    s.name AS seal_name,
+    s.image_url AS seal_image,
+
+    r.target_id AS review_target_id  
+
+  FROM passport_seal ps
+  JOIN seal s ON ps.seal_id = s.id
+  JOIN review r ON ps.review_id = r.id  
+  WHERE ps.passport_id = #{passportId}
+    </select>
+
+    <delete id="delete">
+        DELETE FROM passport_seal WHERE id = #{id}
+    </delete>
+</mapper>

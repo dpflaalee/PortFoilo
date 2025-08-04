@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.reserv.ReservMapper">
+
+	<resultMap id="ReservResultMap"
+		type="com.ssdam.tripPaw.domain.Reserv">
+		<id property="id" column="id" />
+		<result property="countPeople" column="count_people" />
+		<result property="countPet" column="count_pet" />
+		<result property="createdAt" column="created_at" />
+		<result property="deleteAt" column="delete_at" />
+		<result property="startDate" column="start_date" />
+		<result property="endDate" column="end_date" />
+		<result property="expireAt" column="expire_at" />
+		<result property="state" column="state" />
+		<result property="originalPrice" column="original_price" />
+		<result property="finalPrice" column="final_price" />
+
+		<association property="member"
+			javaType="com.ssdam.tripPaw.domain.Member">
+			<id property="id" column="member_id" />
+			<result property="username" column="member_username" />
+		</association>
+
+		<association property="place"
+			javaType="com.ssdam.tripPaw.domain.Place">
+			<id property="id" column="place_id" />
+			<result property="name" column="place_name" />
+			<result property="latitude" column="latitude" />
+			<result property="longitude" column="longitude" />
+			<result property="region" column="region" />
+		</association>
+
+		<association property="memberTripPlan"
+			javaType="com.ssdam.tripPaw.domain.MemberTripPlan">
+			<id property="id" column="member_trip_plan_id" />
+			<result property="startDate" column="start_date" />
+			<result property="endDate" column="end_date" />
+			<result property="countPeople" column="count_people" />
+			<result property="countPet" column="count_pet" />
+			
+			  <association property="tripPlan" javaType="com.ssdam.tripPaw.domain.TripPlan">
+			    <id property="id" column="trip_plan_id" />
+			    <result property="title" column="trip_plan_title" />
+			  </association>
+		</association>
+
+	    <association property="pay" javaType="com.ssdam.tripPaw.domain.Pay">
+	        <id property="id" column="pay_id" />
+	        <result property="state" column="pay_state" />
+	        <result property="amount" column="pay_amount" />
+	        <!-- 필요하면 더 매핑 -->
+	    </association>
+
+	</resultMap>
+	<!-- 예약 + 장소 포함 매핑 -->
+	<resultMap id="ReservWithPlaceResultMap"
+		type="com.ssdam.tripPaw.domain.Reserv" extends="ReservResultMap">
+		<association property="place"
+			javaType="com.ssdam.tripPaw.domain.Place">
+			<id property="id" column="p_id" />
+			<result property="name" column="p_name" />
+			<result property="latitude" column="latitude" />
+			<result property="longitude" column="longitude" />
+			<result property="region" column="region" />
+		</association>
+	</resultMap>
+
+	<select id="findAll" resultMap="ReservResultMap">
+		SELECT r.*, p.id AS place_id,
+		p.name AS place_name, p.latitude, p.longitude,
+		p.region,
+		m.id AS
+		member_id, m.username AS member_username
+		FROM reserv r
+		JOIN place p ON
+		r.place_id = p.id
+		JOIN member m ON r.member_id = m.id
+		ORDER BY
+		r.created_at DESC
+	</select>
+
+<!-- 	<select id="findById" parameterType="long"
+		resultMap="ReservResultMap">
+		SELECT
+		r.id,
+		r.count_people,
+		r.count_pet,
+		r.created_at,
+		r.delete_at,
+		r.start_date,
+		r.end_date,
+		r.expire_at,
+		r.state,
+		r.original_price,
+		r.final_price,
+		r.member_id,
+		m.username AS
+		member_username,
+		r.place_id,
+		p.name AS place_name,
+		p.latitude,
+		p.longitude,
+		p.region
+		FROM reserv r
+		JOIN
+		member m ON r.member_id = m.id
+		JOIN place p ON r.place_id = p.id
+		WHERE
+		r.id = #{id}
+	</select> -->
+
+	<select id="findByMemberId" resultMap="ReservResultMap">
+	  SELECT
+	    r.*,
+	    p.id AS place_id,
+	    p.name AS place_name,
+	    p.latitude,
+	    p.longitude,
+	    p.region,
+	    m.id AS member_id,
+	    m.username AS member_username,
+	    mtp.id AS member_trip_plan_id,
+	    mtp.start_date AS start_date,
+	    mtp.end_date AS end_date,
+	    mtp.count_people AS count_people,
+	    mtp.count_pet AS count_pet,
+	    tp.id AS trip_plan_id,
+	    tp.title AS trip_plan_title
+	  FROM reserv r
+	  JOIN place p ON r.place_id = p.id
+	  JOIN member m ON r.member_id = m.id
+	  LEFT JOIN member_trip_plan mtp ON r.member_trip_plan_id = mtp.id
+	  LEFT JOIN trip_plan tp ON mtp.trip_plan_id = tp.id
+	  WHERE r.member_id = #{memberId}
+	  ORDER BY r.created_at DESC
+	</select>
+
+	<select id="findById" parameterType="long"
+		resultMap="ReservResultMap">
+		SELECT
+		r.id,
+		r.count_people,
+		r.count_pet,
+		r.created_at,
+		r.delete_at,
+		r.start_date,
+		r.end_date,
+		r.expire_at,
+		r.state,
+		r.original_price,
+		r.final_price,
+		r.member_id,
+		m.username AS member_username,
+		r.place_id,
+		p.name AS place_name,
+		p.latitude,
+		p.longitude,
+		p.region
+		FROM reserv r
+		JOIN member m ON r.member_id = m.id
+		JOIN place p ON r.place_id = p.id
+		WHERE r.id = #{id}
+	</select>
+
+	<!-- username으로 Member 조회 -->
+	<select id="findMemberById"
+		resultType="com.ssdam.tripPaw.domain.Member">
+		SELECT * FROM member WHERE id = #{id}
+	</select>
+
+	<!-- placeId로 Place 조회 -->
+	<select id="findPlaceById"
+		resultType="com.ssdam.tripPaw.domain.Place">
+		SELECT * FROM place WHERE id = #{id}
+	</select>
+
+	<!-- memberTripPlanId로 MemberTripPlan 조회 -->
+	<select id="findMemberTripPlanById"
+		resultType="com.ssdam.tripPaw.domain.MemberTripPlan">
+		SELECT * FROM member_trip_plan WHERE id = #{id}
+	</select>
+
+	<select id="findByMemberTripPlanId" resultMap="ReservResultMap"
+		parameterType="long">
+		SELECT
+		r.*,
+		r.member_trip_plan_id AS member_trip_plan_id,
+		p.id AS place_id,
+		p.name AS place_name,
+		p.latitude AS latitude,
+		p.longitude AS longitude,
+		p.region AS region,
+		m.id AS member_id,
+		m.username AS member_username
+		FROM reserv r
+		JOIN place p ON r.place_id =
+		p.id
+		JOIN member m ON r.member_id = m.id
+		JOIN member_trip_plan mtp ON
+		r.member_trip_plan_id = mtp.id
+		WHERE r.member_trip_plan_id =
+		#{memberTripPlanId}
+		AND r.delete_at IS NULL
+		ORDER BY r.start_date ASC
+	</select>
+
+	<select id="findCoursesByMemberTripPlanId"
+		resultType="com.ssdam.tripPaw.dto.TripPlanCoursePlaceDto">
+		SELECT
+		mtp.id AS memberTripPlanId,
+		tp.id AS tripPlanId,
+		p.id
+		AS placeId,
+		p.name AS placeName,
+		p.latitude,
+		p.longitude
+		FROM
+		member_trip_plan mtp
+		JOIN trip_plan tp ON mtp.trip_plan_id = tp.id
+		LEFT
+		JOIN trip_plan_course c ON tp.id = c.trip_plan_id
+		LEFT JOIN route r ON
+		c.route_id = r.id
+		LEFT JOIN route_place rp ON r.id = rp.route_id
+		LEFT
+		JOIN place p ON rp.place_id = p.id
+		WHERE mtp.id = #{memberTripPlanId}
+		ORDER BY c.id ASC, rp.id ASC
+	</select>
+
+	<select id="findByTripPlansId" resultMap="ReservResultMap"
+		parameterType="long">
+		SELECT r.*, p.*, pay.*
+		FROM reserv r
+		LEFT JOIN place p ON
+		r.place_id = p.id
+		LEFT JOIN pay pay ON pay.reserv_id = r.id
+		LEFT JOIN
+		member_trip_plan mtp ON r.trip_plan_id = mtp.trip_plan_id
+		WHERE
+		r.trip_plan_id = #{tripPlanId}
+	</select>
+
+	<select id="findByMemberTripPlanIdAndMember"
+		resultMap="ReservResultMap">
+		SELECT
+		r.id AS id,
+		r.count_people,
+		r.count_pet,
+		r.created_at,
+		r.delete_at,
+		r.start_date,
+		r.end_date,
+		r.expire_at,
+		r.state,
+		r.original_price,
+		r.final_price,
+		r.member_id,
+		r.member_trip_plan_id AS member_trip_plan_id,
+		p.id
+		AS place_id,
+		p.name AS place_name,
+		p.latitude AS latitude,
+		p.longitude AS
+		longitude,
+		p.region AS region,
+		m.id AS member_id,
+		m.username AS member_username
+		FROM reserv r
+		JOIN place p ON r.place_id = p.id
+		JOIN
+		member m ON r.member_id = m.id
+		JOIN member_trip_plan mtp ON
+		r.member_trip_plan_id = mtp.id
+		WHERE r.member_trip_plan_id =
+		#{memberTripPlanId}
+		AND r.member_id = #{memberId}
+		AND r.delete_at IS
+		NULL
+		ORDER BY r.start_date ASC
+	</select>
+
+	<select id="findAllByPayId" resultType="com.ssdam.tripPaw.domain.Reserv">
+	    SELECT r.*
+	    FROM reserv r
+	    WHERE r.pay_id = #{payId}
+	</select>
+
+	<select id="findCoursesByMemberId"
+		resultType="com.ssdam.tripPaw.dto.TripPlanCoursePlaceDto">
+		SELECT
+		mtp.id AS memberTripPlanId,
+		tp.id AS tripPlanId,
+		p.id
+		AS placeId,
+		p.name AS placeName,
+		p.latitude,
+		p.longitude
+		FROM
+		member_trip_plan mtp
+		JOIN trip_plan tp ON mtp.trip_plan_id = tp.id
+		LEFT
+		JOIN trip_plan_course c ON tp.id = c.trip_plan_id
+		LEFT JOIN route r ON
+		c.route_id = r.id
+		LEFT JOIN route_place rp ON r.id = rp.route_id
+		LEFT
+		JOIN place p ON rp.place_id = p.id
+		WHERE mtp.member_id = #{memberId}
+		ORDER BY mtp.created_at DESC, c.id ASC, rp.id ASC
+	</select>
+
+
+	<!-- <insert id="insert" parameterType="com.ssdam.tripPaw.domain.Reserv" 
+		useGeneratedKeys="true" keyProperty="id" keyColumn="id"> INSERT INTO reserv 
+		( start_date, end_date, expire_at, delete_at, state, created_at, count_people, 
+		count_pet, original_price, final_price, member_id, place_id <if test="memberTripPlan 
+		!= null"> , member_trip_plan_id </if> ) VALUES ( #{startDate}, #{endDate}, 
+		#{expireAt}, #{deleteAt}, #{state}, #{createdAt}, #{countPeople}, #{countPet}, 
+		#{originalPrice}, #{finalPrice}, #{member.id}, #{place.id} <if test="memberTripPlan 
+		!= null"> , #{memberTripPlan.id} </if> ) </insert> -->
+
+	<insert id="insert"
+		parameterType="com.ssdam.tripPaw.domain.Reserv"
+		useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+		INSERT INTO reserv (
+		start_date, end_date, expire_at, delete_at, state,
+		created_at, count_people, count_pet,
+		original_price, final_price,
+		member_id, place_id
+		<if test="tripPlanId != null">
+			, trip_plan_id
+		</if>
+		<if test="memberTripPlan != null">
+			, member_trip_plan_id
+		</if>
+		)
+		VALUES (
+		#{startDate}, #{endDate}, #{expireAt}, #{deleteAt}, #{state},
+		#{createdAt}, #{countPeople}, #{countPet},
+		#{originalPrice},
+		#{finalPrice},
+		#{member.id}, #{place.id}
+		<if test="tripPlanId != null">
+			, #{tripPlan.id}
+		</if>
+		<if test="memberTripPlan != null">
+			, #{memberTripPlan.id}
+		</if>
+		)
+	</insert>
+
+	<update id="updatePayIdByReservId">
+	  UPDATE reserv
+	  SET pay_id = #{payId}
+	  WHERE id = #{reservId}
+	</update>
+
+	<select id="existsOverlappingReservation" resultType="boolean">
+		SELECT
+		COUNT(*) > 0
+		FROM reserv
+		WHERE delete_at IS NULL
+		AND member_id =
+		#{memberId}
+		AND place_id = #{placeId}
+		AND end_date >= CURRENT_DATE
+		AND
+		state IN ('WAITING', 'CONFIRMED')
+		AND (
+		(start_date BETWEEN #{startDate}
+		AND #{endDate})
+		OR
+		(end_date BETWEEN #{startDate} AND #{endDate})
+		OR
+		(#{startDate} BETWEEN start_date AND end_date)
+		OR
+		(#{endDate} BETWEEN
+		start_date AND end_date)
+		)
+	</select>
+
+	<update id="updateByState"
+		parameterType="com.ssdam.tripPaw.domain.Reserv">
+		UPDATE reserv SET state = #{state} WHERE id = #{id}
+	</update>
+
+	<update id="softDelete" parameterType="long">
+		UPDATE reserv
+		SET delete_at
+		= CURRENT_DATE,
+		state = 'CANCELLED'
+		WHERE id = #{id}
+	</update>
+
+	<update id="softGroupDelete" parameterType="map">
+		UPDATE reserv
+		SET state = 'CANCELLED', delete_at = NOW()
+		WHERE id IN
+		<foreach item="id" collection="reservIds" open="(" close=")"
+			separator=",">
+			#{id}
+		</foreach>
+		AND member_trip_plan_id = #{memberTripPlanId}
+	</update>
+
+	<select id="findByIdWithPlace" parameterType="long"
+		resultMap="ReservWithPlaceResultMap">
+		SELECT
+		r.id, r.start_date, r.end_date, r.expire_at,
+		r.delete_at, r.state,
+		r.count_people, r.count_pet, r.original_price,
+		r.final_price,
+		p.id AS p_id, p.name AS p_name,
+		p.latitude, p.longitude, p.region
+		FROM reserv r
+		JOIN place p ON
+		r.place_id = p.id
+		WHERE r.id = #{id} AND r.delete_at IS NULL
+	</select>
+
+	<select id="findActiveReservedRanges" resultType="map">
+		SELECT
+		start_date, end_date
+		FROM reserv
+		WHERE delete_at IS NULL
+		AND state IN
+		('WAITING', 'CONFIRMED')
+	</select>
+
+	<select id="findByTripPlanId"
+		resultType="com.ssdam.tripPaw.domain.Reserv">
+		SELECT * FROM reserv
+		WHERE trip_plan_id = #{tripPlanId}
+		AND state != 'CANCELLED'
+		AND delete_at IS NULL
+	</select>
+
+	<select id="findByTripPlanIdAndMember"
+		resultMap="ReservResultMap">
+		SELECT * FROM reserv
+		WHERE trip_plan_id = #{tripPlanId}
+		AND
+		member_id = #{memberId}
+		AND delete_at IS NULL
+		ORDER BY start_date ASC
+	</select>
+
+	<select id="findReservedRangesByPlace" parameterType="long"
+		resultType="map">
+		SELECT start_date, end_date
+		FROM reserv
+		WHERE delete_at IS
+		NULL
+		AND state IN ('WAITING', 'CONFIRMED')
+		AND place_id = #{placeId}
+	</select>
+
+	<update id="updateWithPay"
+		parameterType="com.ssdam.tripPaw.domain.Reserv">
+		UPDATE reserv
+		SET
+		state = #{state},
+		pay_id = #{pay.id}
+		WHERE id = #{id}
+	</update>
+
+	<!-- 해당 tripPlanId의 예약한 날짜 가져오기 -->
+	<select id="findReservedRangesByTripPlanId" parameterType="long"
+		resultType="map">
+		SELECT start_date, end_date
+		FROM reserv
+		WHERE trip_plan_id =
+		#{tripPlanId}
+		AND delete_at IS NULL
+		AND state IN ('WAITING',
+		'CONFIRMED')
+	</select>
+
+</mapper>

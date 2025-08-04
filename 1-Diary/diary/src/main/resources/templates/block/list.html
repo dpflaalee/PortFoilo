@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" 
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+
+<th:block layout:fragment="content">
+<script th:inline="javascript">
+	var currentUserId = 0;
+	var blockedUserIds = [];
+</script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<div class="container mt-4">
+	<h3 class="mb-4 text-center">차단 관리</h3>
+
+	<!-- 유저 검색 -->
+	<h5 class="mt-5">유저 검색 후 차단</h5>
+	<div class="input-group mb-3">
+		<input type="text" id="blockSearchInput" class="form-control" placeholder="유저 검색">
+		<button class="btn btn-outline-secondary" id="blockSearchBtn">검색</button>
+	</div>
+	<div id="blockSearchResults"></div>
+
+	<!-- 차단된 유저 목록 -->
+	<h5>차단된 유저</h5>
+	<div id="blockedUsersList">
+		<table class="table table-bordered">
+			<tr th:each="user : ${blockedUsers}">
+				<td>
+					<div class="d-flex align-items-center">
+						<div class="p-2">
+							<img class="rounded-circle" src="https://placehold.co/80x80" alt="profile">
+						</div>
+						<div class="p-2 flex-grow-1" style="font-size: 1.2em; font-weight: bold;">
+							<span th:text="${user.username}">username</span>
+						</div>
+						<div class="p-2">
+							<button class="btn btn-outline-danger unblock-btn" th:data-user-id="${user.id}">
+								차단 해제
+							</button>
+						</div>
+					</div>
+				</td>
+			</tr>
+			<tr th:if="${#lists.isEmpty(blockedUsers)}">
+				<td class="text-center">차단된 유저가 없습니다.</td>
+			</tr>
+		</table>
+	</div>
+</div>
+
+<script>
+$(document).ready(function () {
+	const csrfToken = $("meta[name='_csrf']").attr("content");
+	const csrfHeader = $("meta[name='_csrf_header']").attr("content");
+
+	if (csrfHeader && csrfToken) {
+		$.ajaxSetup({
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader(csrfHeader, csrfToken);
+			}
+		});
+	}
+
+	// 차단 해제 버튼 클릭
+	$(document).on("click", ".unblock-btn", function () {
+	    const $button = $(this);
+	    const blockedId = $button.data("user-id");
+
+	    $.ajax({
+	        url: "/block",
+	        type: "DELETE",
+	        data: { blockerId: currentUserId, blockedId: blockedId },
+	        success: function () {
+	            alert("차단 해제 완료!");
+
+	            $button.closest('tr').fadeOut(300, function () {
+	                $(this).remove();
+
+	                if ($("#blockedUsersList table tr").length === 0) {
+	                    $("#blockedUsersList table").html(`
+	                        <tr>
+	                            <td class="text-center">차단된 유저가 없습니다.</td>
+	                        </tr>
+	                    `);
+	                }
+	            });
+
+	            blockedUserIds = blockedUserIds.filter(id => id !== blockedId);
+
+	            const $searchBtn = $(`#blockSearchResults button[data-user-id='${blockedId}']`);
+	            if ($searchBtn.length > 0) {
+	                $searchBtn
+	                    .removeClass("btn-secondary")
+	                    .addClass("btn-outline-danger block-user-btn")
+	                    .prop("disabled", false)
+	                    .text("차단");
+	            }
+	        }
+	    });
+	});
+
+	// 검색 버튼 클릭
+	$("#blockSearchBtn").click(function () {
+	    const keyword = $("#blockSearchInput").val().trim();
+	    if (!keyword) return;
+
+	    $.ajax({
+	        url: "/search/users",
+	        type: "GET",
+	        data: { 
+	            keyword: keyword, 
+	            currentUserId: currentUserId 
+	        },
+	        success: function (users) {
+	            let html = "<ul class='list-group'>";
+	            if (users.length === 0) {
+	                html += "<li class='list-group-item'>검색 결과가 없습니다.</li>";
+	            } else {
+	                users.forEach(user => {
+	                    if (user.id === currentUserId) return;
+
+	                    const isBlocked = blockedUserIds.includes(user.id);
+
+	                    html += `
+	                        <li class='list-group-item d-flex justify-content-between align-items-center'>
+	                            <span>${user.username}</span>
+	                            ${isBlocked
+	                                ? `<button class="btn btn-sm btn-secondary" disabled>이미 차단됨</button>`
+	                                : `<button class="btn btn-sm btn-outline-danger block-user-btn" data-user-id="${user.id}">차단</button>`}
+	                        </li>`;
+	                });
+	            }
+	            html += "</ul>";
+	            $("#blockSearchResults").html(html);
+	        },
+	        error: function () {
+	            console.error("AJAX Error");
+	            alert("검색 실패");
+	        }
+	    });
+	});
+
+	// 검색 결과에서 차단 버튼 클릭
+	$(document).on("click", ".block-user-btn", function () {
+	    const $button = $(this);
+	    const blockedId = $button.data("user-id");
+	    const blockedUsername = $button.siblings("span").text();
+
+	    $.ajax({
+	        url: "/block",
+	        type: "POST",
+	        data: { blockerId: currentUserId, blockedId: blockedId },
+	        success: function () {
+	            alert("차단 및 언팔로우 성공!");
+	            
+	            updateFollowCounts();
+
+	            // 버튼 상태 변경
+	            $button
+	                .removeClass("btn-outline-danger block-user-btn")
+	                .addClass("btn-secondary")
+	                .prop("disabled", true)
+	                .text("이미 차단됨");
+
+	            blockedUserIds.push(blockedId);
+
+	            const newBlockedUserRow = `
+	                <tr>
+	                    <td>
+	                        <div class="d-flex align-items-center">
+	                            <div class="p-2">
+	                                <img class="rounded-circle" src="https://placehold.co/80x80" alt="profile">
+	                            </div>
+	                            <div class="p-2 flex-grow-1" style="font-size: 1.2em; font-weight: bold;">
+	                                <span>${blockedUsername}</span>
+	                            </div>
+	                            <div class="p-2">
+	                                <button class="btn btn-outline-danger unblock-btn" data-user-id="${blockedId}">
+	                                    차단 해제
+	                                </button>
+	                            </div>
+	                        </div>
+	                    </td>
+	                </tr>`;
+
+	            const $blockedTable = $("#blockedUsersList table");
+	            if ($blockedTable.find("tr td.text-center").length > 0) {
+	                $blockedTable.html("");
+	            }
+	            $blockedTable.append(newBlockedUserRow);
+	        },
+	        error: function () {
+	            alert("차단 실패");
+	        }
+	    });
+	});
+});
+</script>
+
+</th:block>
+</html>

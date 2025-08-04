@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+
+<th:block layout:fragment="content" class="">
+
+	<div class="container-fluid" id="themeadd"
+		style="padding: 3em 3em 5em 3em;" th:classappend="${theme}">
+		<!-- 제목영역 -->
+		<div>
+			<div class="d-flex justify-content-end bd-highlight"
+				th:text="${dto.openScope.openScope_title}"></div>
+			<div class="d-flex justify-content-between mt-3">
+				<h1 th:text="${dto.diary_title}"
+					style="font-size: 1.8em; font-weight: bold;"></h1>
+				<div th:text="${dto.diary_emoji}"></div>
+			</div>
+			
+			<!-- 수정 -->
+			<div class="d-flex justify-content-between bd-highlight mb-3">
+				<p th:text="${dto.user.username}" class="bd-highlight"></p>
+				<p th:text="${#temporals.format(dto.create_date, 'yyyy-MM-dd')}"
+					class="bd-highlight"></p>
+			</div>
+		</div>
+		
+		<!-- 본문영역 -->
+		<div class="mb-3">
+			<textarea th:text="${dto.diary_content}" maxlength="500"
+				class="form-control p-4 textarea1"
+				style="width: 100%; height: 60vh; resize: none; border: none;"
+				readonly></textarea>
+		</div>
+
+		<div>
+			<form th:action="@{/diary/like}" method="post">
+				<input type="hidden" name="diaryId" th:value="${dto.id}" /> <span
+					class="p-2 bd-highlight" th:text="${likeCount}"></span>
+				<button type="submit" th:text="${isLiked ? '♥' : '♡'}"
+					style="color: red; border: none; background-color: transparent;">
+				</button>
+			</form>
+		</div>
+		
+		<!-- 수정삭제 -->
+		<div class="d-flex bd-highlight mb-4">
+			<div class="p-2 bd-highlight">
+				<button type="button" class="btn p-3 btn-b" data-bs-toggle="modal"
+					data-bs-target="#pageDeleteModal"
+					style="width: 100%; font-size: 18px; bold;  font-weight: bold;">삭제하기</button>
+			</div>
+			<div class="p-2 flex-grow-1 bd-highlight">
+				<a th:href="@{|/diary/update/${dto.id}|}" class="btn p-3 btn-f"
+					style="width: 100%; font-size: 18px; font-weight: bold;">수정하기</a>
+			</div>
+		</div>
+
+		<!-- 삭제모달 -->
+		<div class="modal fade" id="pageDeleteModal" tabindex="-1"
+			aria-labelledby="pageDeleteModalLabel" aria-hidden="true">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-body">
+						<p style="text-align: center; padding-top: 2em;">일기를 삭제하시겠습니까?</p>
+					</div>
+					<form th:action="@{|/diary/delete/${dto.id}|}" method="post">
+						<div class="modal-footer justify-content-center">
+							<div>
+								<button type="button" class="btn btn-secondary p-2"
+									data-bs-dismiss="modal">취소</button>
+							</div>
+							<div>
+								<button type="submit" class="btn btn-primary p-2">삭제하기</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</th:block>
+
+
+</html>

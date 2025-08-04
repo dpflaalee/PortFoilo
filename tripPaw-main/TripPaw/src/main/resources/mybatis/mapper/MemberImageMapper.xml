@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="com.ssdam.tripPaw.member.MemberImageMapper">
+	<resultMap id="memberImageResultMap" type="com.ssdam.tripPaw.domain.MemberImage">
+	    <id property="id" column="id"/>
+	    <result property="src" column="src"/>
+	    <!-- <result property="originalFileName" column="original_file_name"/> -->
+	    <result property="updateAt" column="update_at"/>
+		<result property="createAt" column="create_at"/>
+	    <association property="member" javaType="com.ssdam.tripPaw.domain.Member">
+	        <id property="id" column="member_id"/>
+	    </association>
+	</resultMap>
+	<select id="selectMemberImage" resultMap="memberImageResultMap">
+		select *
+		from member_image
+		where member_id = #{member.id}
+	</select>	
+	<insert id="insertMemberImage">
+		insert into member_image (	src
+									,member_id
+									,create_at
+									,update_at
+									) values (
+									""
+									,#{member.id}
+									,#{createAt}
+									,#{updateAt}
+									)
+	</insert>
+ 	<update id="updateMemberImage" parameterType="MemberImage">
+ 		update member_image set src = #{src}
+ 								,update_at = #{updateAt}
+ 						where member_id = #{member.id}
+ 	</update>
+ </mapper>

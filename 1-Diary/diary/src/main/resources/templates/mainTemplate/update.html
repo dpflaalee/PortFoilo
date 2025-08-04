@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" 
+				xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+				layout:decorate="~{fragments/layout}">
+				
+<th:block layout:fragment="content">
+<div id="writeTheme" class="theme1">
+	
+   <!-- 글쓰기폼 -->
+    <div class="container-fluid">
+      <form th:action="@{/diary/update}" method="post" onsubmit="return form()">
+       <input type="hidden" th:name="id" th:value="${dto.id}" />
+        <div class="d-flex bd-highlight mb-4">
+          <div class="form-group">
+			<input type="hidden" name="nickname" id="nickname" class="form-control" th:value="${nickname}" readonly>
+			<input type="hidden" name="username" id="username" class="form-control" th:value="${username}" readonly>
+			<input type="hidden" name="email" id="email" class="form-control" th:value="${email}" readonly>
+		  </div>
+          <div class="flex-grow-1 bd-highlight" style="margin-right: 0.6em;">
+            <input class="form-control form-control-lg" type="text" name="diary_title" id="diary_title"  th:value="${dto.diary_title}" aria-label="default input example">
+          </div>
+          <select id="themeSelect" onchange="changeTheme()" class="form-select p-2 bd-highlight" aria-label="Template" name="template_id" style="width: 19%; margin-right: 0.6em;">
+            <option value="" disabled selected>템플릿</option>
+            <option value="1" th:selected="${theme == 'theme1'}">기본</option>
+            <option value="2" th:selected="${theme == 'theme2'}">주황</option>
+            <option value="3"  th:selected="${theme == 'theme3'}">초록</option>
+          </select>
+		
+          <!-- 글쓰기 테마 즉시적용 -->
+          <script>
+          function changeTheme() {
+              var selectedTheme = document.getElementById('themeSelect').value;
+              var writeThemeElement = document.getElementById('writeTheme');
+
+              writeThemeElement.classList.remove('theme1', 'theme2', 'theme3');
+              writeThemeElement.classList.add('theme'+selectedTheme);
+              
+          }
+          </script>
+
+          <!-- 글쓰기 테마 즉시적용 -->    
+          <select class="form-select p-2 bd-highlight" aria-label="openScope"  name="open_scope_id" style="width: 19%;">
+            <option value="" disabled selected>공개범위</option>
+            <option value="1">나만보기</option>
+            <option value="2">친구공개</option>
+            <option value="4">전체공개</option>
+            <option value="5" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">관리자작성</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <textarea maxlength="500" th:text="${dto.diary_content}" class="form-control" name="diary_content" id="diary_content" rows="3" style="width: 100%; height: 60vh; resize: none;"></textarea>
+        </div>
+	      
+        <!-- 이모티콘 -->
+        <div class="container-fluid d-flex bd-highlight mb-3" >
+        	<div class="bd-highlight"><button type="button" id="emojiBtn" class="btn p-2 mr-3" style="background-color: #eee;">이모티콘으로 일기 요약받기</button></div>
+        	<div class="flex-grow-1 bd-highlight">
+        	<input type="text" id="diary_emoji" name="diary_emoji"
+        		style="border: 1px solid #eee; padding: 0.5em; width: 100%;"></div>
+        </div>
+	    
+        <div class="d-flex bd-highlight mb-4">
+        <div class="p-2 bd-highlight">
+          <button type="button" class="btn p-3 btn-b" style="width: 100%;font-size: 18px; font-weight: bold;" onclick="window.location.href='/main';">취소</button>
+        </div>
+        <div class="p-2 flex-grow-1 bd-highlight">
+          <button type="submit" class="btn p-3 btn-f" style="width: 100%; font-size: 18px; font-weight: bold; ">게시하기</button>
+        </div>
+      </div>
+      </form>
+    </div>
+	
+   <!-- 글쓰기폼 -->	
+  		<script>
+			function form() {
+				let diary_title = document.querySelector("#diary_title");
+				let bcontent = document.querySelector("#diary_content");
+				let open_scope = document.querySelector("select[name='open_scope_id']");
+		        let template = document.querySelector("select[name='template_id']");
+				
+				if(diary_title.value == ""){ alert("제목을 입력해주세요"); diary_title.focus(); return false; }
+				if(diary_content.value == ""){ alert("내용을 입력해주세요"); diary_content.focus(); return false; }
+		        if(open_scope.value == "") { alert("공개 범위를 선택해주세요"); open_scope.focus(); return false; }
+		        if(template.value == "") { alert("템플릿을 선택해주세요"); template.focus(); return false; }
+
+		        return true
+			}
+		</script>
+	<th:block layout:fragment="jQuery">
+			<script type="text/javascript">
+				$(function() {
+					$(".emoji").hide();
+					$("#emojiBtn").on("click", function() {
+						$(".emoji").fadeIn();
+						let diary_content = $("#diary_content").val();
+						if (diary_content.length > 0) {
+							getEmoji(diary_content);
+							$(".emoji").fadeIn();
+						}
+					})
+				});
+				function getEmoji(diary_content) {
+					$.ajax({
+						url : "/diary/emoji",
+						type : "POST",
+						data : JSON.stringify({
+							content : diary_content
+						}),
+						dataType : "json",
+						contentType : "application/json;charset=UTF-8",
+						error : function(zhr, status, msg) {
+							console.error(status + "/" + msg);
+						},
+						success : function(json) {
+							if (json && json.emoji && json.emoji.length > 0) {
+								$("#diary_emoji").val(json.emoji);
+							}
+						}
+					});
+				}
+			</script>
+	</th:block>	
+</div>	
+</th:block>			
+
+</html>

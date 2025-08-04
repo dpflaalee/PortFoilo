@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssdam.tripPaw.chatting.chatRoomMember.ChatRoomMemberMapper">
+	 <resultMap id="chatRoomMemberResultMap" type="com.ssdam.tripPaw.domain.ChatRoomMember">
+        <id property="id" column="chatroom_member_id"/>
+        <result property="role" column="role"/>
+        <result property="joinedAt" column="joinedAt"/>
+        <result property="status" column="status"/>
+        
+        <!-- Member와의 연관 관계 매핑 -->
+        <association property="member" javaType="com.ssdam.tripPaw.domain.Member">
+            <id property="id" column="member_id"/>
+            <result property="nickname" column="nickname"/>
+            <!-- 필요 시 Member의 다른 필드도 매핑 -->
+        </association>
+
+        <!-- ChatRoom과의 연관 관계 매핑 -->
+        <association property="chatRoom" javaType="com.ssdam.tripPaw.domain.ChatRoom">
+            <id property="id" column="chatroom_id"/>
+             <!-- 필요 시 ChatRoom의 다른 필드도 매핑 -->
+        </association>
+    </resultMap>
+    
+    <insert id="insertChatRoomMember" parameterType="ChatRoomMember"
+     		useGeneratedKeys="true" keyProperty="id">
+    	insert into chat_room_member (
+    									role
+    									,chatRoom_id
+    									,member_id
+    									,joined_at
+    									,status
+							) values (
+   										#{role}
+   										,#{chatRoom.id}
+   										,#{member.id}
+   										,#{joinedAt}
+   										,#{status}
+   										)
+    </insert>
+    <update id="updateChatRoomMember" parameterType="ChatRoomMember">
+    	update chat_room_member set status = #{status}
+    					where member_id = #{member.id} and chatRoom_id = #{chatRoom.id}
+    </update>
+</mapper>

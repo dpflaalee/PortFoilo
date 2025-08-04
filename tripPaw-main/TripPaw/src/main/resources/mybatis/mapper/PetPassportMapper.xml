@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper	namespace="com.ssdam.tripPaw.petpassport.PetPassportMapper">
+
+	<!-- resultMap: 여권 유저 기본 정보 -->
+	<resultMap id="PetPassportMap" type="PetPassport">
+		<id property="id" column="id" />
+		<result property="petName" column="pet_name" />
+		<result property="species" column="species" />
+		<result property="petAge" column="pet_age" />
+		<result property="petGender" column="pet_gender" />
+		<result property="imageUrl" column="image_url" />
+		<result property="passNum" column="pass_num" />
+		<result property="createdAt" column="created_at" />
+
+		<association property="member" javaType="Member">
+			<id property="id" column="member_id" />
+		</association>
+	</resultMap>
+
+	<!-- 여권 + 도장 포함 조회 -->
+	<resultMap id="PetPassportWithSealMap" type="PetPassport" extends="PetPassportMap">
+	  <collection property="passportSeals" ofType="PassportSeal">
+	    <id property="id" column="seal_id"/>
+	
+	    <association property="seal" javaType="Seal">
+	      <id property="id" column="seal_id"/>
+	      <result property="imageUrl" column="seal_image"/>
+	      <result property="name" column="seal_name"/>
+	    </association>
+	
+	    <association property="review" javaType="Review">
+	      <id property="id" column="review_id"/>
+	      <result property="targetId" column="review_target_id"/>
+	    </association>
+	  </collection>
+	</resultMap>
+
+	<!-- 여권 등록 -->
+	<insert id="insertPetPassport" parameterType="PetPassport"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO pet_passport
+		(member_id, pet_name, species, pet_age, pet_gender, image_url, pass_num,
+		created_at)
+		VALUES
+		(#{member.id}, #{petName}, #{species}, #{petAge}, #{petGender}, #{imageUrl},
+		#{passNum}, #{createdAt})
+	</insert>
+
+	<!-- 유저 ID로 전체 여권 조회 -->
+	<select id="selectPassportsByMemberId"
+		resultMap="PetPassportMap">
+		SELECT * FROM pet_passport WHERE member_id = #{memberId}
+	</select>
+
+	<!-- 여권 ID로 단건 조회 -->
+	<select id="selectPassportById" resultMap="PetPassportMap">
+		SELECT * FROM pet_passport WHERE id = #{passportId}
+	</select>
+
+	<!-- 도장 포함 여권 상세 조회 -->
+	<select id="selectPassportWithSeals" resultMap="PetPassportWithSealMap">
+	  SELECT 
+	    pp.*,
+	    ps.id AS seal_id,
+	    s.image_url AS seal_image,
+	    s.name AS seal_name,
+	    r.id AS review_id,
+	    r.target_id AS review_target_id
+	
+	  FROM pet_passport pp
+	  LEFT JOIN passport_seal ps ON pp.id = ps.passport_id
+	  LEFT JOIN seal s ON ps.seal_id = s.id  
+	  LEFT JOIN review r ON ps.review_id = r.id
+	
+	  WHERE pp.id = #{passportId}
+	</select>
+
+	<!-- 여권 수정 -->
+	<update id="updatePetPassport" parameterType="PetPassport">
+		UPDATE pet_passport
+		SET pet_name = #{petName},
+		species = #{species},
+		pet_age = #{petAge},
+		pet_gender = #{petGender},
+		image_url = #{imageUrl}
+		WHERE id = #{id}
+	</update>
+
+	<!-- 여권 삭제 -->
+	<delete id="deletePetPassport">
+		DELETE FROM pet_passport WHERE id = #{passportId}
+	</delete>
+
+	<!-- 여권번호 중복 체크 -->
+	<select id="countByPassNum" resultType="int">
+		SELECT COUNT(*) FROM pet_passport WHERE pass_num = #{passNum}
+	</select>
+
+</mapper>

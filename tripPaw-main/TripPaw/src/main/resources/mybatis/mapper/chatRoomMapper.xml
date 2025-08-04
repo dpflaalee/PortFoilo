@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssdam.tripPaw.chatting.chatroom.ChatRoomMapper">
+  <resultMap type="ChatRoom" id="chatRoomResultMap">
+  	<id property="id" column="id"/>
+  	<result property="title" column="title" />
+  	<result property="description" column="description" />
+  	<result property="isGroup" column="isGroup" />
+  	<result property="createdAt" column="createdAt" />
+  </resultMap>
+  <select resultMap="chatRoomResultMap" id="findChatRoom">
+  	select * from chat_room
+  </select>
+  <select id="findRoomById" resultMap="chatRoomResultMap"  parameterType="long">
+  	SELECT *
+  	from chat_room
+  	where id = #{id}
+  </select>
+  <insert id="createChatRoom" parameterType="ChatRoom"
+  	useGeneratedKeys="true" keyProperty="id">
+	insert into chat_room (title,description,is_group) values (#{title},#{description},#{isGroup} )
+  </insert>
+</mapper>

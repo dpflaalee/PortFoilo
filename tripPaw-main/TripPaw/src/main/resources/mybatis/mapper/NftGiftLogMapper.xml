@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.nft.NftGiftLogMapper">
+
+  <!-- 복합 객체 매핑용 resultMap -->
+  <resultMap id="NftGiftLogResultMap" type="com.ssdam.tripPaw.domain.NftGiftLog">
+   <id property="id" column="id"/>
+   <result property="message" column="message"/>
+   <result property="sentAt" column="sent_at"/>
+
+   <association property="memberNft" javaType="com.ssdam.tripPaw.domain.MemberNft">
+    <id property="id" column="member_nft_id"/>
+   </association>
+
+   <association property="sender" javaType="com.ssdam.tripPaw.domain.Member">
+    <id property="id" column="sender_id"/>
+   </association>
+
+   <association property="receiver" javaType="com.ssdam.tripPaw.domain.Member">
+    <id property="id" column="receiver_id"/>
+   </association>
+  </resultMap>
+
+  <!-- 보내기 기록 조회 -->
+  <select id="findSentLogsBySenderId" resultMap="NftGiftLogResultMap">
+    SELECT * FROM nft_gift_log
+    WHERE sender_id = #{senderId}
+    ORDER BY sent_at DESC
+  </select>
+
+  <!-- 받기 기록 조회 -->
+  <select id="findReceivedLogsByReceiverId" resultMap="NftGiftLogResultMap">
+    SELECT * FROM nft_gift_log
+    WHERE receiver_id = #{receiverId}
+    ORDER BY sent_at DESC
+  </select>
+
+  <!-- 선물 로그 저장 -->
+  <insert id="insert" parameterType="com.ssdam.tripPaw.domain.NftGiftLog" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO nft_gift_log (
+      member_nft_id,
+      sender_id,
+      receiver_id,
+      message,
+      sent_at
+    ) VALUES (
+      #{memberNft.id},
+      #{sender.id},
+      #{receiver.id},
+      #{message},
+      NOW()
+    )
+  </insert>
+
+  <!-- 로그 삭제 -->
+  <delete id="deleteById" parameterType="long">
+    DELETE FROM nft_gift_log WHERE id = #{id}
+  </delete>
+
+</mapper>

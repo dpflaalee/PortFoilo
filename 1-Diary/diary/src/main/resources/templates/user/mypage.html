@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+
+<th:block layout:fragment="content">
+	<div th:if="${msg}" class="alert alert-success" id="alert">
+		<span th:text="${msg}"></span>
+		<button id="close-alert" class="btn btn-primary">확인</button>
+	</div>
+	<script>
+	    document.getElementById("close-alert")?.addEventListener("click", function() {
+	        var alert = document.getElementById("alert");
+	        if (alert) {
+	            alert.style.display = "none";
+	        }
+	    });
+	</script>
+	
+	<!-- 목표(Goal) 항목 -->
+	<div class="container-fluid p-3">
+		<div class="d-flex justify-content-between">
+			<div>
+				<a class="btn w-100" th:href="@{/user/goalComplate}"
+					style="font-weight: bold; color: #f8b739; padding: 12px 0;"><i
+					class="bi bi-patch-check-fill"></i></a>
+			</div>
+			<h1 class="p-2 flex-grow-1 bd-highlight" style="font-size: 1.8em;">Today
+				List</h1>
+			<div class="bd-highlight p-2" style="width: 35%;">
+				<form id="dateForm" th:action="@{/goal/byDate}" method="post"
+					class="d-flex">
+					<input type="text" id="datePicker" name="selectedDate"
+						class="form-control datepicker" th:value="${selectedDate}">
+					<label class="input-group-text" for="datePicker"><i
+						class="bi bi-calendar3"></i></label>
+				</form>
+			</div>
+			<script>
+				$(function() {
+					const $dateInput = $('#datePicker');
+					if (!$dateInput.val()) {
+						$dateInput.val(new Date().toISOString()
+								.substring(0, 10));
+					}
+
+					$dateInput.datepicker({
+						format : "yyyy-mm-dd",
+						autoclose : true,
+						templates : {
+							leftArrow : '&laquo',
+							rightArrow : '&raquo'
+						},
+						todayHighlight : true,
+						language : "ko"
+					}).on("changeDate", function(e) {
+						document.getElementById("dateForm").submit();
+					});
+				});
+			</script>
+			<div class="p-2 bd-highlight">
+				<a class="nav-link" href="#createGoalModal"
+					style="font-size: 1.5em; font-weight: bold;" data-bs-toggle="modal">+</a>
+			</div>
+		</div>
+	</div>
+	<div>
+		<table class="table">
+			<caption>목표 테이블</caption>
+			<tbody>
+				<tr th:each="g : ${goal}">
+					<td scope="row" style="width: 1%;"><a
+						href="javascript:void(0);" class="nav-link" data-bs-toggle="modal"
+						data-bs-target="#updategoalModal"
+						th:attr="onclick=|openUpdateModal('${g.id}', '${g.goal_content}', '${g.dueDate}', '${g.openScope.id}')|">
+							<i class="bi bi-pencil-fill"></i>
+					</a></td>
+					<td scope="row" style="width: 1%;"><a href="#deletegoalModal"
+						class="nav-link" data-bs-toggle="modal"
+						th:attr="onclick=|openDeleteModal('${g.id}')|"> <i
+							class="bi bi-trash"></i>
+					</a></td>
+					<td scope="row" th:text="${g.goal_content}"
+						style="font-size: 1.1em;"></td>
+					<td scope="row" th:text="${g.startDate}" style="color: #9b9b9b;"></td>
+					<td scope="row" th:text="${g.dueDate}" style="color: #9b9b9b;"></td>
+					<td scope="row" style="text-align: right; padding-right: 1.5em;">
+						<form th:action="@{|/goal/success/${g.id}|}" method="post">
+							<input type="hidden" name="date"
+								th:value="${#temporals.format(selectedDate, 'yyyy-MM-dd')}" />
+							<input type="checkbox" name="is_success" value="true"
+								th:checked="${goalStatusMap[g.id]?.is_success} ? true : false"
+								onchange="this.form.submit()" />
+						</form>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	
+	<!-- 목표 생성모달 -->
+	<div class="modal fade" id="createGoalModal" tabindex="-1"
+		aria-labelledby="createGoalModalLabel" aria-hidden="true">
+		<div class="modal-dialog" style="color: #000;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="createGoalModalLabel">목표 생성하기</h1>
+				</div>
+				<div class="modal-body">
+					<form th:action="@{/goal/insert}" method="post"
+						onsubmit="return validateGoalInsertForm()">
+						<div class="mb-3">
+							<label for="goal_content" class="col-form-label">목표명</label> <input
+								type="text" class="form-control" id="goal_content_insert"
+								name="goal_content" value="" required>
+						</div>
+						<select class="form-select p-2 form-select" id="openScope_insert"
+							name="openScope.id" required aria-label="Default select example"
+							style="width: 19%;">
+							<option value="" selected disabled>공개범위 선택</option>
+							<option value="1">나만보기</option>
+							<option value="2">친구공개</option>
+							<option value="4">전체공개</option>
+							<option value="5"
+								th:if="${#authorization.expression('hasRole(''ADMIN'')')}">관리자작성</option>
+						</select>
+						<div class="mb-3 d-flex justify-content-around">
+							<div>
+								<label for="startDate" class="col-form-label">시작일</label> <input
+									type="date" id="startDate_insert" name="startDate" value=""
+									required>
+							</div>
+							<div>
+								<label for="dueDate" class="col-form-label">종료일</label> <input
+									type="date" id="dueDate_insert" name="dueDate" value=""
+									required>
+							</div>
+						</div>
+						<div class="modal-footer justify-content-center">
+							<div>
+								<button type="reset" class="btn btn-secondary p-2"
+									data-bs-dismiss="modal">취소</button>
+							</div>
+							<div>
+								<button type="submit" class="btn btn-primary p-2">생성하기</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- 수정모달 -->
+	<div class="modal fade" id="updategoalModal" tabindex="-1"
+		aria-labelledby="updategoalModalLabel" aria-hidden="true">
+		<div class="modal-dialog" style="color: #000;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="updategoalModalLabel">목표 수정하기</h1>
+				</div>
+				<div class="modal-body">
+					<form id="updateGoalForm" method="post"
+						onsubmit="return validateGoalUpdateForm()">
+						<div class="mb-3">
+							<label for="goal_content" class="col-form-label">목표명</label> <input
+								type="text" class="form-control" id="goal_content_update"
+								name="goal_content">
+						</div>
+						<div class="mb-3 d-flex justify-content-around">
+							<div>
+								<label for="startDate" class="col-form-label mr-3">시작일</label> <input
+									type="date" id="startDate_update" name="startDate" required>
+							</div>
+							<div>
+								<label for="dueDate" class="col-form-label mr-3">종료일</label> <input
+									type="date" id="dueDate_update" name="dueDate" required>
+							</div>
+							<select class="form-select p-2 form-select" id="openScope_update"
+								name="open_scope_id" required
+								aria-label="Default select example" style="width: 19%;">
+								<option value="" selected disabled>공개범위 선택</option>
+								<option value="1">나만보기</option>
+								<option value="2">친구공개</option>
+								<option value="4">전체공개</option>
+								<option value="5"
+									th:if="${#authorization.expression('hasRole(''ADMIN'')')}">관리자작성</option>
+							</select>
+						</div>
+						<div class="modal-footer justify-content-center">
+							<div>
+								<button type="reset" class="btn btn-secondary p-2"
+									data-bs-dismiss="modal">취소</button>
+							</div>
+							<div>
+								<button type="submit" class="btn btn-primary p-2">변경하기</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- 삭제모달 -->
+	<div class="modal fade" id="deletegoalModal" tabindex="-1"
+		aria-labelledby="deletegoalModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-body">
+					<form id="deleteGoalForm" method="post">
+						<p style="text-align: center; padding-top: 2em; color: #000;">
+							삭제하시겠습니까?</p>
+						<div class="modal-footer justify-content-center">
+							<div>
+								<button type="reset" class="btn btn-secondary p-2"
+									data-bs-dismiss="modal">취소</button>
+							</div>
+							<div>
+								<button type="submit" class="btn btn-primary p-2">삭제하기</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 내 일기 리스트 -->
+	<div class="container-fluid p-3">
+		<div class="d-flex justify-content-between">
+			<h1 class="p-2 bd-highlight" style="font-size: 1.8em;">My Diary</h1>
+		</div>
+		<div class="container-fluid p-2">
+			<p th:if="${#lists.isEmpty(list)}">등록된 일기가 없습니다.</p>
+			<th:block th:each="dto, state : ${list}">
+				<ul class="list-unstyled d-flex justify-content-between"
+					style="border-bottom: 1px solid #ccc; padding: 10px 0 30px;">
+					<li></li>
+					<li>
+						<ul class="list-unstyled">
+							<li><a th:href="@{|/mainTemplate/detail/${dto.id}|}"
+								th:text="${dto.diary_title}"
+								class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+								style="font-size: 22px; color: #964b00;"></a></li>
+							<li
+								th:text="${#temporals.format(dto.create_date, 'yyyy-MM-dd HH:mm')}"
+								style="font-size: 16px; color: #9d9d9d;"></li>
+						</ul>
+					</li>
+					<li class="ms-auto p-2 align-self-center"
+						th:text="${dto.diary_emoji}"></li>
+				</ul>
+			</th:block>
+		</div>
+	</div>
+	
+	<script>
+	function validateGoalInsertForm() {
+	    const content = document.getElementById('goal_content_insert').value.trim();
+	    const scope = document.getElementById('openScope_insert').value;
+	    const start = document.getElementById('startDate_insert').value;
+	    const due = document.getElementById('dueDate_insert').value;
+
+	    if (!content) {
+	        alert("목표명을 입력하세요.");
+	        return false;
+	    }
+	    if (!scope) {
+	        alert("공개범위를 선택하세요.");
+	        return false;
+	    }
+	    if (!start) {
+	        alert("시작일을 입력하세요.");
+	        return false;
+	    }
+	    if (!due) {
+	        alert("종료일을 입력하세요.");
+	        return false;
+	    }
+	    return true;
+	}
+
+	function validateGoalUpdateForm() {
+	    const content = document.getElementById('goal_content_update').value.trim();
+	    const scope = document.getElementById('openScope_update').value;
+	    const start = document.getElementById('startDate_update').value;
+	    const due = document.getElementById('dueDate_update').value;
+
+	    if (!content) {
+	        alert("목표명을 입력하세요.");
+	        return false;
+	    }
+	    if (!scope) {
+	        alert("공개범위를 선택하세요.");
+	        return false;
+	    }
+	    if (!start) {
+	        alert("시작일을 입력하세요.");
+	        return false;
+	    }
+	    if (!due) {
+	        alert("종료일을 입력하세요.");
+	        return false;
+	    }
+	    return true;
+	}
+</script>
+
+</th:block>
+
+
+</html>

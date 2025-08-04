@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper	namespace="com.ssdam.tripPaw.checklist.CheckTemplateMapper">
+
+	<!-- 템플릿 목록 조회 -->
+	<select id="selectAllTemplates" resultType="CheckTemplate">
+    	SELECT * FROM check_template ORDER BY created_at DESC
+  	</select>
+	<!-- 템플릿 목록 조회 -->
+  	
+  	<!-- 템플릿 상세 조회 -->
+  	<select id="selectTemplateWithItems" resultMap="TemplateWithItemsMap">
+	    SELECT ct.*, cti.id as item_id, cti.content, cti.created_at as item_created_at
+	    FROM check_template ct
+	    LEFT JOIN check_template_item cti ON ct.id = cti.checktemplate_id
+	    WHERE ct.id = #{id}
+	 </select>
+
+	<resultMap id="TemplateWithItemsMap" type="CheckTemplate">
+	   <id property="id" column="id"/>
+	   <result property="title" column="title"/>
+	   <result property="type" column="type"/>
+	   <result property="createdAt" column="created_at"/>
+	   
+	   <association property="member" javaType="com.ssdam.tripPaw.domain.Member">
+	   		<id property="id" column="member_id"/>
+	   </association>   
+	   	   
+	   <collection property="items" ofType="CheckTemplateItem">
+	     <id property="id" column="item_id"/>
+	     <result property="content" column="content"/>
+	     <result property="createdAt" column="item_created_at"/>
+	   </collection>
+	</resultMap>
+  	<!-- 템플릿 상세 조회 -->
+
+	<!-- 탬플릿 생성 -->
+	<insert id="insertTemplate" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO check_template (title, type, member_id, created_at)
+		VALUES (#{title}, #{type}, #{memberId}, now())
+	</insert>
+	<!-- 생성 -->
+	  	
+  	<!-- 수정 -->
+  	<update id="updateTemplate">
+  		UPDATE check_template
+  		Set title = #{title}, type= #{type}
+  		where id= #{id}
+  	</update>
+  	<!-- 수정 -->
+  	
+<!-- !!!!! -->
+	<!-- 기존 항목(item) 삭제 -->
+	<delete id="deleteTemplateItemsByTemplateId"> 
+		DELETE FROM check_template_item WHERE   checktemplate_id = #{checktemplateId}
+	</delete>
+	<!-- 기존 항목(item) 삭제 -->
+
+	<!-- 템플릿 삭제 -->
+	<delete id="deleteTemplateById"> DELETE FROM check_template   WHERE id = #{id} </delete>
+	<!-- 템플릿 삭제 -->
+<!-- !!!!! -->
+
+	<select id="countTemplates" resultType="int"> SELECT COUNT(*) FROM check_template </select>
+
+</mapper>

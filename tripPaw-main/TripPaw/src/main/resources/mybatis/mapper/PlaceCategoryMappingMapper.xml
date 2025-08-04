@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.ssdam.tripPaw.category.PlaceCategoryMappingMapper">
+
+	<!-- 장소-카테고리 매핑 등록 -->
+	<insert id="insertMapping" parameterType="map">
+		INSERT INTO place_category (place_id, category_id)
+		VALUES (#{placeId}, #{categoryId})
+	</insert>
+
+
+	<!-- 특정 장소에 연결된 카테고리 목록 조회 -->
+	<select id="findCategoriesByPlaceId" parameterType="long"
+		resultMap="categoryResultMap">
+		SELECT c.id, c.name
+		FROM place_category pc
+		JOIN category c ON pc.category_id = c.id
+		WHERE pc.place_id = #{placeId}
+	</select>
+
+
+	<!-- 결과 매핑 -->
+	<resultMap id="categoryResultMap"
+		type="com.ssdam.tripPaw.domain.Category">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+	</resultMap>
+
+</mapper>

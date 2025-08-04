@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.favorite.FavoriteMapper">
+
+	<!-- 결과 매핑 -->
+	<resultMap id="favoriteResultMap"
+		type="com.ssdam.tripPaw.domain.Favorite">
+		<id property="id" column="id" />
+		<result property="targetId" column="target_id" />
+		<result property="targetType" column="target_type" />
+
+		<association property="member"
+			javaType="com.ssdam.tripPaw.domain.Member">
+			<id property="id" column="member_id" />
+		</association>
+	</resultMap>
+
+
+	<!-- 즐겨찾기 등록 -->
+	<insert id="insertFavorite"
+		parameterType="com.ssdam.tripPaw.domain.Favorite">
+		INSERT INTO favorite (target_id, target_type, member_id)
+		VALUES (#{targetId}, #{targetType}, #{member.id})
+	</insert>
+
+	<!-- 즐겨찾기 삭제 -->
+	<delete id="deleteFavorite"
+		parameterType="com.ssdam.tripPaw.domain.Favorite">
+		DELETE FROM favorite
+		WHERE target_id = #{targetId}
+		AND
+		target_type = #{targetType}
+		AND member_id = #{member.id}
+	</delete>
+
+	<!-- 즐겨찾기 조회 (단건) -->
+	<select id="selectFavorite"
+		parameterType="com.ssdam.tripPaw.domain.Favorite"
+		resultMap="favoriteResultMap">
+		SELECT * FROM favorite
+		WHERE target_id = #{targetId}
+		AND
+		target_type = #{targetType}
+		AND member_id = #{member.id}
+	</select>
+
+	<!-- 즐겨찾기 전체 조회 (특정 유저 기준) -->
+	<select id="selectFavoritesByMemberId" parameterType="long"
+		resultMap="favoriteResultMap">
+		SELECT * FROM favorite
+		WHERE member_id = #{member.id}
+	</select>
+
+	<!-- FavoriteMapper.xml -->
+	<resultMap id="favoriteWithPlaceMap"
+		type="com.ssdam.tripPaw.domain.Favorite">
+		<id property="id" column="id" />
+		<result property="targetId" column="target_id" />
+		<result property="targetType" column="target_type" />
+		<association property="place"
+			javaType="com.ssdam.tripPaw.domain.Place">
+			<id property="id" column="place_id" />
+			<result property="name" column="place_name" />
+			<result property="imageUrl" column="image_url" />
+			<result property="rating" column="rating" />
+			<result property="reviewCount" column="review_count" />
+			<result property="region" column="region" />
+			<association property="placeType"
+				javaType="com.ssdam.tripPaw.domain.PlaceType">
+				<result property="name" column="place_type_name" />
+			</association>
+		</association>
+	</resultMap>
+
+	<select id="selectFavoritePlacesByMemberId"
+		resultMap="favoriteWithPlaceMap">
+		SELECT
+		f.*,
+		p.id AS place_id,
+		p.name AS place_name,
+		p.image_url,
+		p.rating,
+		p.review_count,
+		p.region,
+		pt.name AS
+		place_type_name
+		FROM favorite f
+		JOIN place p ON f.target_id = p.id
+		LEFT
+		JOIN place_type pt ON p.place_type_id = pt.id
+		WHERE f.member_id =
+		#{memberId}
+		AND f.target_type = 'PLACE'
+	</select>
+
+
+</mapper>

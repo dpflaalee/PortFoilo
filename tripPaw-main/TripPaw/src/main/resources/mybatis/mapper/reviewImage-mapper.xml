@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssdam.tripPaw.review.ReviewImageMapper">
+	<resultMap id="reviewImageResultMap" type="com.ssdam.tripPaw.domain.ReviewImage">
+	    <id property="id" column="id"/>
+	    <result property="imageUrl" column="image_url"/>
+	    <result property="originalFileName" column="original_file_name"/>
+	    <result property="uploadedAt" column="uploaded_at"/>
+	
+	    <association property="review" javaType="com.ssdam.tripPaw.domain.Review">
+	        <id property="id" column="review_id"/>
+	    </association>
+	</resultMap>
+	<insert id="insertReviewImage" useGeneratedKeys="true" keyProperty="id">
+	    INSERT INTO review_image (review_id, image_url, original_file_name, uploaded_at)
+	    VALUES (#{review.id}, #{imageUrl}, #{originalFileName}, #{uploadedAt})
+	    <!-- VALUES
+	    <foreach collection="images" item="img" separator=",">
+	        (#{img.review.id}, #{img.imageUrl}, #{img.originalFileName}, #{img.uploadedAt})
+	    </foreach> -->
+	</insert>
+    <delete id="deleteImagesByReviewId">
+    	DELETE FROM review_image WHERE review_id = #{reviewId}
+    </delete>
+    <select id="findImageUrlsByReviewId" resultType="string">
+	    SELECT image_url FROM review_image WHERE review_id = #{reviewId}
+	</select>
+</mapper>

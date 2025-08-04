@@ -1,0 +1,210 @@
+.container {
+  max-width: 600px;
+  margin: 2rem auto;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+.receipt {
+  background: #fff;
+  border: 1px dashed #aaa;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.05);
+}
+
+.receiptHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.headerLeft h2 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+
+.receiptHeader h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.receiptBody p {
+  margin: 6px 0;
+  font-size: 0.95rem;
+}
+
+.receiptFooter {
+  margin-top: 1rem;
+  text-align: right;
+}
+
+.receiptFooter button {
+  padding: 6px 12px;
+  background: #444;
+  color: #fff;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.refund {
+  background: #e0a800;
+}
+
+.loading,
+.error,
+.empty {
+  text-align: center;
+  margin-top: 2rem;
+  color: #555;
+}
+
+.container {
+  position: relative;
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; 
+  margin-bottom: 1.5rem;
+  padding-top: 80px; 
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin: 0;
+  line-height: 1;
+}
+
+.closeIcon {
+  font-size: 1.6rem;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1; 
+}
+
+.closeIcon:hover {
+  color: #e11d48;
+}
+
+.receipt {
+  position: relative;
+  background: white;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.receiptFooter {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background-color: transparent;
+  box-shadow: none;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* 텍스트 스타일 공통 */
+.receiptFooter span {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  user-select: none;
+}
+
+/* 환불 완료 텍스트 */
+.refundedBadge {
+  background: linear-gradient(135deg, #34d399, #059669);
+  color: white;
+  box-shadow: 0 4px 8px rgba(5, 150, 105, 0.4);
+}
+
+/* 예약 취소 후 이용 가능 텍스트 */
+.infoText {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* 환불 처리 버튼 */
+.refund {
+  background-color: #ef4444;
+  color: white;
+  padding: 8px 18px;
+  border-radius: 24px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+
+.refund:hover {
+  background-color: #dc2626;
+}
+
+/* 결제 취소 버튼 */
+.cancelBtn {
+  background-color: #3b82f6;
+  color: white;
+  padding: 8px 18px;
+  border-radius: 24px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+
+.cancelBtn:hover {
+  background-color: #2563eb;
+}
+
+.detailBtn {
+  padding: 5px 12px;
+  background-color: #888888;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+.detailBtn:hover {
+  background-color: #555555; 
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}

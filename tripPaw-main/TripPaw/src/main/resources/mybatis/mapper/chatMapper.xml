@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssdam.tripPaw.chatting.chat.ChatMapper">
+  <resultMap type="Chat" id="chatResultMap">
+  	<id property="id" column="id"/>
+  	<result property="content" column="content" />
+  	<result property="contentType" column="contentType" />
+  	<!-- <result property="sender" column="sender" /> -->
+  	<result property="sentAt" column="sentAt"/>
+
+   <association property="chatRoom" javaType="com.ssdam.tripPaw.domain.ChatRoom">
+        <id property="id" column="chat_room_id"/>
+        <result property="title" column="title"/>
+        </association>
+
+    <association property="member" javaType="com.ssdam.tripPaw.domain.Member">
+        <id property="id" column="member_id"/>
+        <result property="username" column="username"/>
+        </association>
+  </resultMap>
+  <select resultMap="chatResultMap" id="findChat">
+  	select * from chat
+  </select>
+
+	<insert id="chatSave" parameterType="Chat">
+		insert into chat(
+						  content
+						  ,content_type
+						  ,chat_room_id
+						  ,sender_id
+						  ,sent_at
+						) values (
+							#{content}
+							,#{contentType}
+							,#{chatRoom.id}
+							,#{sender.id}
+							,#{sentAt}
+						)						
+	</insert>
+</mapper>

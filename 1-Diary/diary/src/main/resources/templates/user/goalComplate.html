@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+
+<th:block layout:fragment="content">
+	<div class="container-fluid p-3">
+	
+	    <div class="d-flex justify-content-center"><canvas id="goalChart" style="max-width: 1150px;" class=""></canvas> </div>  
+	    <script>
+	    window.addEventListener("load" , function(){
+			const ctx = document.getElementById('goalChart').getContext('2d');
+	        
+	        $.ajax({
+					url:"/user/goalComplate/chart" , 
+					type:"GET" , 
+					dataType:"json" , 
+					contentType:"application/json;charset=UTF-8",
+					error:function(xhr, status, msg){ alert(status + "/" + msg); } , 
+					success:function(json){ 
+					let labels = json.map(data => data.getGoal_content);
+				        let data =json.map(data => data.completionRate*100);
+				        
+				        // Chart.js 설정
+				        new Chart(ctx, {
+				            type: 'bar',
+				            data: {
+				                labels: labels,
+				                datasets: [{
+				                    label: '달성률',
+				                    data: data,
+				                    backgroundColor: 'rgba(0, 163, 11, 0.2)',
+				                    borderColor: 'rgba(0, 163, 11, 1)',
+				                    borderWidth: 1
+				                }]
+				            },
+				            options: {
+				                scales: {
+				                    yAxes: [{
+				                        ticks: {
+				                        	min: 0,
+				                        	max: 100,
+				                            stepSize: 10,
+				                            callback: function(value) {
+				                                return value + '%';
+				                            }
+				                        }
+				                    }]
+				                }
+				            }
+				        });
+					}
+				});
+	    });
+	    
+	    </script>	
+	
+		<h1 class="p-2 flex-grow-1 bd-highlight" style="font-size: 1.8em;">달성
+			완료!</h1>
+		<table class="table table-hover">
+			<caption>나의 완료 목표</caption>
+			<thead class="table-success">
+				<tr>
+					<th scope="col">목표명</th>
+					<th scope="col">시작 날짜</th>
+					<th scope="col">끝난 날짜</th>
+					<th scope="col">달성률</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="a : ${achivs}">
+					<td th:text="${a.goal.goal_content}">목표명</td>
+					<td th:text="${a.goal.startDate}">시작일</td>
+					<td th:text="${a.goal.dueDate}">종료일</td>
+					<td th:text="${a.completionRate}">달성률</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+
+</th:block>
+</html>

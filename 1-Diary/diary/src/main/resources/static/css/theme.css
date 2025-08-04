@@ -1,0 +1,49 @@
+@charset "UTF-8";
+
+.theme1{
+	background-color: #fff8e6;
+	color: #402e32;
+	padding: 10px;
+}
+.theme1 .btn-f{
+	background-color: #f8b739; border: 2px solid #f8b739;
+	border: 2px solid #f8b739;
+	color: #402e32;
+}
+.theme1 .btn-b{
+	background-color: #fff; border: 2px solid #f8b739;
+	border: 2px solid #f8b739;
+	color: #402e32;
+}
+
+.theme2 {
+	background-color: #FFD8B1;
+	color: #610023;
+	padding: 10px;
+}
+.theme2 .textarea1{
+	background-color: #fff6ed;
+}
+.theme2 .btn-f{
+	background-color: #610023;
+	color: white;
+	border: 2px solid #610023;
+}
+.theme2 .btn-b{
+	background-color: #fff;
+	color: #610023;
+	border: 2px solid #610023;
+}	
+
+.theme3{
+	background-color: #98b141;
+	padding: 10px;
+}
+.theme3 .btn-f{
+	background-color: #2f4858;
+	color: #98b141;
+}
+.theme3 .btn-b{
+	border: 2px solid #2f4858;
+	color: #2f4858;
+}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+
+<th:block layout:fragment="content">
+	<!-- 그룹 멤버들 -->
+	<div class="container-fluid p-3"
+		style="border-bottom: 1px solid #9d9d9d;">
+		<div style="display: flex; flex-wrap: wrap;">
+			<div th:each="user : ${users}">
+				<div th:text="${user.username}" class="user-item"
+					th:attr="data-user-id=${user.id}, data-username=${user.username}"
+					style="cursor: pointer; width: 60px; height: 60px; border-radius: 50%; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; font-weight: bold; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin: 5px;"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 그룹 멤버별 오늘 목표 -->
+	<div style="cursor: pointer; font-weight: bold; margin: 10px 0;"
+		id="toggle-goals-btn">▶ 그룹 멤버들의 오늘 목표 보기</div>
+
+	<!-- 전체 멤버 목표 영역 -->
+	<div id="all-user-goals" style="display: none;">
+
+		<div th:each="entry : ${userGoalsMap}" class="user-goal-block"
+			style="margin-bottom: 10px;">
+			<div style="display: flex; flex-wrap: wrap;">
+			<div th:text="${entry.key.username}" class="user-item"
+				th:attr="data-user-id=${entry.key.id}, data-username=${entry.key.username}"
+				style="cursor: pointer; width: 60px; height: 60px; border-radius: 50%; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; font-weight: bold; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin: 5px;"></div>
+			<ul style="list-style: none; padding-left: 15px;">
+				<li th:each="goal : ${entry.value}" style="margin-bottom: 5px;">
+					<span th:if="${successGoalIds.contains(goal.id)}">✅</span> <span
+					th:unless="${successGoalIds.contains(goal.id)}">⬜</span> <span
+					th:text="${goal.goal_content}">등록된 목표가 없습니다.</span>
+				</li>
+			</ul>
+			</div>
+		</div>
+
+	</div>
+
+	<div class="container-fluid p-3">
+		<!-- 프로필영역 -->
+		<div class="d-flex bd-highlight mb-3">
+			<div class="container p-2 bd-highlight  align-self-center"
+				style="width: 100%;">
+
+				<th:block th:each="d : ${groupDiaryList}">
+					<ul class="list-unstyled d-flex justify-content-between"
+						style="border-bottom: 1px solid #ccc; padding: 10px 0 30px;">
+						<li class="p-2 flex-grow-1 bd-highlight">
+							<ul class="list-unstyled">
+								<li style="color: #000000; font-weight: bold; font-size: 20px;"
+									th:text="${d.diary.user.username}"></li>
+								<li><a
+									style="font-size: 22px; margin-left: 8px; color: #964b00;"
+									class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+									th:text="${d.diary.diary_title}"
+									th:href="@{|/group/groupDiaryDetail/${d.diary.id}|}"></a><a
+									style="font-size: 15px; margin-left: 8px; color: #964b00;"
+									class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+									th:text="${#temporals.format(d.diary.create_date, 'yyyy-MM-dd')}"></a></li>
+							</ul>
+						</li>
+						<li class="ms-auto p-2 align-self-center" style="text-align: end;"
+							th:text="${d.diary.diary_emoji}"></li>
+					</ul>
+				</th:block>
+				<div class="modal fade" id="userActionModal" tabindex="-1"
+					aria-labelledby="userActionModalLabel" aria-hidden="true">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="userActionModalLabel"></h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal"
+									aria-label="닫기"></button>
+							</div>
+							<div class="modal-body text-center">
+								<p id="selectedUsername"
+									style="font-size: 20px; font-weight: bold;"></p>
+								<p class="text-danger small" id="blockNotice"
+									style="display: none;">※ 유저를 차단하거나 유저가 나를 차단한 경우 팔로우를 할 수
+									없습니다.</p>
+								<button id="followBtn" class="btn btn-primary m-2">팔로우하기</button>
+
+								<!-- 방장만 보이는 탈퇴 버튼 -->
+								<button id="kickBtn" class="btn btn-danger m-2"
+									style="display: none;">강퇴하기</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<th:block th:if="${not #strings.isEmpty(turnMessage)}">
+		<script th:inline="javascript">
+	    alert([[${turnMessage}]]);
+	</script>
+	</th:block>
+	<script th:inline="javascript">
+		const blockedUserIds = [[${blockedUserIds}]];
+  		const usersWhoBlockedMe = [[${usersWhoBlockedMeIds}]];
+	</script>
+	<script th:inline="javascript">
+	document.addEventListener("DOMContentLoaded", function() {
+	    const userItems = document.querySelectorAll('.user-item');
+	    const group_id = [[${group.id}]];
+	    const isLeader = [[${isLeader}]];
+	    
+	    userItems.forEach(item => {
+	        item.addEventListener('click', function() {
+	            const user_id = this.getAttribute('data-user-id');
+	            const username = this.getAttribute('data-username');
+			    const myId = [[${myId}]];
+	
+	            document.getElementById('selectedUsername').innerText = username;
+	
+	            document.getElementById('followBtn').setAttribute('data-user-id', user_id);
+	
+	            document.getElementById('kickBtn').setAttribute('data-user-id', user_id);
+				
+	           if (user_id === String(myId)) {
+    				kickBtn.style.display = 'none';
+   				 	followBtn.style.display = 'none';
+				} else {
+    				followBtn.style.display = 'inline-block'; 
+				}
+	            
+	            if (user_id != String(myId) && isLeader) {
+	                document.getElementById('kickBtn').style.display = 'inline-block';
+	            } else {
+	                document.getElementById('kickBtn').style.display = 'none';
+	            }
+	            
+	            if (Array.isArray(usersWhoBlockedMe) && usersWhoBlockedMe.includes(Number(user_id))) {
+	            	document.getElementById("blockNotice").style.display = "block";
+					followBtn.style.display = 'none';
+				}
+	            
+	            if ( Array.isArray(blockedUserIds) && blockedUserIds.includes(Number(user_id))) {
+	        		document.getElementById("blockNotice").style.display = "block";
+					followBtn.style.display = 'none';
+				}
+	            
+	            var userModal = new bootstrap.Modal(document.getElementById('userActionModal'));
+	            userModal.show();
+	        });
+	    });
+	
+	    document.getElementById('followBtn').addEventListener('click', function() {
+	        const user_id = this.getAttribute('data-user-id');
+	        location.href = '/group/'+ group_id +'/follow/' + user_id;
+	    });
+
+	    document.getElementById('kickBtn').addEventListener('click', function() {
+	        const user_id = this.getAttribute('data-user-id');
+	        if (confirm('정말 이 사용자를 그룹에서 탈퇴시키겠습니까?')) {
+	            location.href = '/group/' + group_id + '/kick/' + user_id;
+	        }
+	    });
+	});
+	
+	</script>
+	<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggleBtn = document.getElementById("toggle-goals-btn");
+        const goalsContainer = document.getElementById("all-user-goals");
+
+        toggleBtn.addEventListener("click", function () {
+            const isHidden = goalsContainer.style.display === "none" || goalsContainer.style.display === "";
+
+            if (isHidden) {
+                goalsContainer.style.display = "block";
+                toggleBtn.innerText = "▼ 그룹 멤버들의 오늘 목표 접기";
+            } else {
+                goalsContainer.style.display = "none";
+                toggleBtn.innerText = "▶ 그룹 멤버들의 오늘 목표 보기";
+            }
+        });
+    });
+</script>
+
+</th:block>
+
+
+</html>

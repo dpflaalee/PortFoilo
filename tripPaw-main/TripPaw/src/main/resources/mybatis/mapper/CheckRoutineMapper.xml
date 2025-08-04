@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper	namespace="com.ssdam.tripPaw.checklist.CheckRoutineMapper">
+
+	<!-- 루틴 생성 -->
+	<insert id="insertCheckRoutine" useGeneratedKeys="true" keyProperty="id">
+	    INSERT INTO check_routine ( title, is_saved, member_id, member_trip_plan_id, created_at) 
+	    VALUES ( #{title}, #{isSaved}, #{member.id}, #{memberTripPlan.id}, now())
+	</insert>
+
+	<!-- 전체 조회 -->
+	<select id="selectAllCheckRoutines" resultMap="CheckRoutineMap">
+		SELECT * FROM check_routine ORDER BY created_at DESC
+	</select>
+
+	<!-- 유저별 루틴 전체 조회 -->
+	<select id="selectRoutinesByMemberId" resultMap="CheckRoutineMap">
+		SELECT * FROM check_routine WHERE member_id = #{memberId} AND is_saved = true ORDER BY created_at DESC
+	</select>
+
+	<!-- 단건 조회 -->
+	<select id="selectCheckRoutineById" resultMap="CheckRoutineMap">
+		SELECT * FROM check_routine WHERE id = #{id}
+	</select>
+
+	<!-- 루틴업데이트 -->
+	<update id="updateCheckRoutine">
+	    UPDATE check_routine
+	    SET title = #{title}, is_saved = COALESCE(#{isSaved}, is_saved), member_id = #{member.id}, member_trip_plan_id = #{memberTripPlan.id}
+	    WHERE id = #{id}
+	</update>
+
+	<!-- 삭제 -->
+	<delete id="deleteCheckRoutineById">
+		DELETE FROM check_routine WHERE id = #{id}
+	</delete>
+
+	<!-- 루틴 단건조회 -->
+	<select id="selectRoutineWithItemsById"	resultMap="CheckRoutineWithItemsMap">
+		SELECT
+	        cr.id AS cr_id, cr.title, cr.is_saved, cr.created_at,
+	        cr.member_id, cr.member_trip_plan_id,
+	        
+		        mc.id AS id, mc.custom_content, mc.is_checked, mc.created_at,
+		        mc.checkroutine_id, mc.checktemplateitem_id,
+		        
+		        cti.content AS cti_content
+
+	    FROM check_routine cr
+	    LEFT JOIN member_check mc ON cr.id = mc.checkroutine_id
+	    LEFT JOIN check_template_item cti ON mc.checktemplateitem_id = cti.id
+	    WHERE cr.id = #{id}
+	</select>
+
+	<select id="selectRoutinesByTripPlanId" resultMap="CheckRoutineMap">
+	  SELECT * FROM check_routine
+	  WHERE member_id = #{memberId}
+	    AND member_trip_plan_id = #{tripPlanId}
+	    AND is_saved = false
+	  ORDER BY created_at DESC
+	</select>	
+
+	<!-- ResultMap -->
+	<resultMap id="CheckRoutineWithItemsMap" type="CheckRoutine">
+		<id property="id" column="cr_id" />
+		<result property="title" column="title" />
+		<result property="isSaved" column="is_saved" />
+		<result property="createdAt" column="created_at" />
+
+		<association property="member" javaType="Member">
+			<id property="id" column="member_id" />
+		</association>
+
+	    <association property="memberTripPlan" javaType="MemberTripPlan">
+	        <id property="id" column="member_trip_plan_id" />
+	    </association>
+
+		<collection property="memberChecks"  ofType="MemberCheck"  resultMap="com.ssdam.tripPaw.checklist.MemberCheckMapper.MemberCheckResultMap" />
+	</resultMap>
+
+	<resultMap id="CheckRoutineMap" type="CheckRoutine">
+		<id property="id" column="id" />
+		<result property="title" column="title" />
+		<result property="isSaved" column="is_saved" />
+		<result property="createdAt" column="created_at" />
+
+		<association property="member" javaType="Member">
+			<id property="id" column="member_id" />
+		</association>
+
+	    <association property="memberTripPlan" javaType="MemberTripPlan">
+	        <id property="id" column="member_trip_plan_id" />
+	    </association>
+	</resultMap>
+
+</mapper>

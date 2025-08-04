@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssdam.tripPaw.tripPlan.TripPlanMapper">
+
+	<!-- 여행 + 리뷰 매핑 -->
+	<resultMap id="tripPlanWithReviewsMap"
+		type="com.ssdam.tripPaw.domain.TripPlan">
+		<id property="id" column="tp_id" />
+		<result property="title" column="title" />
+		<result property="days" column="days" />
+		<result property="publicVisible" column="is_public" />
+		<result property="createdAt" column="created_at" />
+		<result property="imageUrl" column="image_url" />
+
+		<collection property="reviews"
+			ofType="com.ssdam.tripPaw.domain.Review">
+			<id property="id" column="r_id" />
+			<result property="content" column="r_content" />
+			<result property="rating" column="r_rating" />
+			<result property="weatherCondition"
+				column="r_weather_condition" />
+			<result property="createdAt" column="r_created_at" />
+			<association property="member"
+				javaType="com.ssdam.tripPaw.domain.Member">
+				<id property="id" column="r_member_id" />
+			</association>
+		</collection>
+	</resultMap>
+
+	<!-- 여행 + 코스 + 리뷰 -->
+	<resultMap id="tripPlanWithCoursesAndReviewsMap"
+		type="com.ssdam.tripPaw.domain.TripPlan">
+		<!-- TripPlan 기본 정보 -->
+		<id property="id" column="tp_id" />
+		<result property="title" column="title" />
+		<result property="days" column="days" />
+		<result property="publicVisible" column="is_public" />
+		<result property="createdAt" column="created_at" />
+		<result property="imageUrl" column="image_url" />
+
+		<!-- 작성자 -->
+		<association property="member"
+			javaType="com.ssdam.tripPaw.domain.Member">
+			<id property="id" column="member_id" />
+			<result property="nickname" column="member_nickname" />
+		</association>
+
+		<!-- 코스 + 장소 -->
+		<collection property="tripPlanCourses"
+			ofType="com.ssdam.tripPaw.domain.TripPlanCourse">
+			<id property="id" column="c_id" />
+			<association property="route"
+				javaType="com.ssdam.tripPaw.domain.Route">
+				<id property="id" column="route_id" />
+				<collection property="routePlaces"
+					ofType="com.ssdam.tripPaw.domain.RoutePlace">
+					<id property="id" column="rp_id" />
+					<association property="place"
+						javaType="com.ssdam.tripPaw.domain.Place">
+						<id property="id" column="p_id" />
+						<result property="name" column="p_name" />
+						<result property="latitude" column="latitude" />
+						<result property="longitude" column="longitude" />
+						<result property="imageUrl" column="p_image_url" />
+					</association>
+				</collection>
+			</association>
+		</collection>
+
+		<!-- 리뷰 -->
+		<collection property="reviews"
+			ofType="com.ssdam.tripPaw.domain.Review">
+			<id property="id" column="r_id" />
+			<result property="content" column="r_content" />
+			<result property="rating" column="r_rating" />
+			<result property="weatherCondition"
+				column="r_weather_condition" />
+			<result property="createdAt" column="r_created_at" />
+			<association property="member"
+				javaType="com.ssdam.tripPaw.domain.Member">
+				<id property="id" column="r_member_id" />
+			</association>
+		</collection>
+	</resultMap>
+
+
+	<!-- 특정 유저의 여행 + 리뷰 조회 -->
+	<select id="findByMemberIdWithReviews"
+		resultMap="tripPlanWithReviewsMap">
+		SELECT
+		tp.id AS tp_id,
+		tp.title,
+		tp.days,
+		tp.is_public,
+		tp.created_at,
+		tp.image_url,
+
+		r.id AS r_id,
+		r.content AS r_content,
+		r.rating AS r_rating,
+		r.weather_condition AS r_weather_condition,
+		r.created_at AS r_created_at,
+		r.member_id AS r_member_id
+
+		FROM trip_plan
+		tp
+		LEFT JOIN review r
+		ON tp.id = r.target_id
+		AND r.review_type_id = 1
+		WHERE tp.member_id = #{id}
+		AND tp.title NOT IN ('TripPlanForEdit', '수정된
+		여행 경로')
+		ORDER BY tp.id DESC
+	</select>
+
+
+	<select id="findByIdWithCoursesAndReviews"
+		resultMap="tripPlanWithCoursesAndReviewsMap" parameterType="long">
+		SELECT
+		tp.id AS tp_id,
+		tp.title,
+		tp.days,
+		tp.is_public,
+		tp.created_at,
+		tp.image_url,
+
+		m.id AS member_id,
+		m.nickname AS member_nickname,
+
+		c.id AS c_id,
+		r.id AS route_id,
+		rp.id AS rp_id,
+
+		p.id AS p_id,
+		p.name AS p_name,
+		p.latitude,
+		p.longitude,
+		p.image_url AS p_image_url,
+
+		rv.id AS r_id,
+		rv.content AS r_content,
+		rv.rating AS r_rating,
+		rv.weather_condition AS r_weather_condition,
+		rv.created_at AS r_created_at,
+		rv.member_id AS r_member_id
+
+		FROM trip_plan tp
+		LEFT JOIN member m ON tp.member_id = m.id
+		LEFT JOIN trip_plan_course c ON tp.id = c.trip_plan_id
+		LEFT JOIN route r ON c.route_id = r.id
+		LEFT JOIN route_place rp ON r.id = rp.route_id
+		LEFT JOIN place p ON rp.place_id = p.id
+
+		LEFT JOIN review rv ON tp.id = rv.target_id AND rv.review_type_id = 1
+
+		WHERE tp.id = #{id}
+		ORDER BY c.id ASC, rp.id ASC
+	</select>
+
+
+
+	<!-- -->
+	<!-- -->
+	<!-- 여행 경로 + 코스 + 장소 + 작성자 -->
+	<resultMap id="tripPlanWithCoursesMap"
+		type="com.ssdam.tripPaw.domain.TripPlan">
+		<id property="id" column="tp_id" />
+		<result property="title" column="title" />
+		<result property="days" column="days" />
+		<result property="publicVisible" column="is_public" />
+		<result property="createdAt" column="created_at" />
+		<result property="imageUrl" column="image_url" />
+		<association property="member"
+			javaType="com.ssdam.tripPaw.domain.Member">
+			<id property="id" column="member_id" />
+			<result property="nickname" column="member_nickname" />
+		</association>
+
+		<collection property="tripPlanCourses"
+			ofType="com.ssdam.tripPaw.domain.TripPlanCourse">
+			<id property="id" column="c_id" />
+			<association property="route"
+				javaType="com.ssdam.tripPaw.domain.Route">
+				<id property="id" column="route_id" />
+				<collection property="routePlaces"
+					ofType="com.ssdam.tripPaw.domain.RoutePlace">
+					<id property="id" column="rp_id" />
+					<association property="place"
+						javaType="com.ssdam.tripPaw.domain.Place">
+						<id property="id" column="p_id" />
+						<result property="name" column="p_name" />
+						<result property="latitude" column="latitude" />
+						<result property="longitude" column="longitude" />
+					</association>
+				</collection>
+			</association>
+		</collection>
+	</resultMap>
+
+	<resultMap id="tripResultMap"
+		type="com.ssdam.tripPaw.domain.TripPlan">
+		<id property="id" column="id" />
+		<result property="title" column="title" />
+		<result property="days" column="days" />
+		<result property="publicVisible" column="is_public" />
+		<result property="createdAt" column="created_at" />
+		<result property="imageUrl" column="image_url" />
+	</resultMap>
+
+	<resultMap id="tripPlanWithMemberMap"
+		type="com.ssdam.tripPaw.domain.TripPlan">
+		<id property="id" column="tp_id" />
+		<result property="title" column="title" />
+		<result property="days" column="days" />
+		<result property="publicVisible" column="is_public" />
+		<result property="createdAt" column="created_at" />
+		<result property="imageUrl" column="image_url" />
+
+		<association property="member"
+			javaType="com.ssdam.tripPaw.domain.Member">
+			<id property="id" column="member_id" />
+			<result property="nickname" column="member_nickname" />
+		</association>
+	</resultMap>
+
+	<!-- insert -->
+	<insert id="insertTripPlan"
+		parameterType="com.ssdam.tripPaw.domain.TripPlan"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO trip_plan (member_id,
+		title, days, is_public, created_at, image_url)
+		VALUES (#{member.id},
+		#{title}, #{days}, #{publicVisible}, NOW(), #{imageUrl})
+	</insert>
+
+	<insert id="insertRoute"
+		parameterType="com.ssdam.tripPaw.domain.Route" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO route (name)
+		VALUES (#{name})
+	</insert>
+
+	<insert id="insertRoutePlace"
+		parameterType="com.ssdam.tripPaw.domain.RoutePlace"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO route_place (route_id,
+		place_id, sequence)
+		VALUES (#{route.id}, #{place.id}, #{sequence})
+	</insert>
+
+	<insert id="insertTripPlanCourse"
+		parameterType="com.ssdam.tripPaw.domain.TripPlanCourse"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO trip_plan_course
+		(trip_plan_id, route_id)
+		VALUES (#{tripPlan.id}, #{route.id})
+	</insert>
+
+	<!-- select -->
+	<select id="findByIdWithCourses" parameterType="long"
+		resultMap="tripPlanWithCoursesMap">
+		SELECT
+		tp.id AS tp_id,
+		tp.title,
+		tp.days,
+		tp.is_public,
+		tp.created_at,
+		tp.image_url,
+		m.id AS member_id,
+		m.nickname AS
+		member_nickname,
+
+		c.id AS c_id,
+		r.id AS route_id,
+		rp.id AS rp_id,
+		p.id AS
+		p_id,
+		p.name AS p_name,
+		p.latitude,
+		p.longitude
+
+		FROM trip_plan tp
+		LEFT JOIN
+		member m ON tp.member_id = m.id
+		JOIN
+		trip_plan_course c ON tp.id =
+		c.trip_plan_id
+		JOIN route r ON c.route_id
+		= r.id
+		JOIN route_place rp ON
+		r.id = rp.route_id
+		JOIN place p ON
+		rp.place_id = p.id
+		WHERE tp.id = #{id}
+		ORDER BY c.id ASC, rp.id ASC
+	</select>
+
+	<select id="findAllTrips" resultMap="tripResultMap">
+		SELECT tp.id, tp.member_id,
+		tp.title, tp.is_public, tp.image_url, tp.days, tp.created_at
+		FROM
+		trip_plan tp
+		ORDER BY id DESC
+	</select>
+
+	<!-- 기본정보만 가져옴 -->
+	<select id="findById" resultMap="tripResultMap">
+		SELECT tp.id, tp.member_id,
+		tp.title, tp.is_public, tp.image_url, tp.days, tp.created_at
+		FROM
+		trip_plan tp
+		WHERE tp.id = #{id}
+	</select>
+
+	<select id="findByIdWithMember" parameterType="long"
+		resultMap="tripPlanWithMemberMap">
+		SELECT
+		tp.id AS tp_id,
+		tp.title,
+		tp.days,
+		tp.is_public,
+		tp.created_at,
+		tp.image_url,
+		m.id AS member_id,
+		m.nickname AS
+		member_nickname
+		FROM trip_plan tp
+		LEFT JOIN member m ON tp.member_id =
+		m.id
+		WHERE tp.id = #{id}
+	</select>
+
+
+	<!-- 특정 유저가 만든 여행 -->
+	<select id="findByMemberId" resultMap="tripResultMap">
+		SELECT
+		tp.id,
+		tp.title,
+		tp.days,
+		tp.is_public,
+		tp.created_at,
+		tp.image_url
+		FROM trip_plan tp
+		WHERE
+		tp.member_id = #{id}
+		AND tp.title NOT IN ('TripPlanForEdit', '수정된 여행
+		경로')
+		ORDER BY tp.id DESC
+	</select>
+
+	<!-- 공개로 전환하기 -->
+	<update id="makeTripPlanPublic" parameterType="long">
+		UPDATE trip_plan
+		SET is_public = true
+		WHERE id = #{id}
+	</update>
+	<!-- 공개 여부 확인용 -->
+	<select id="isTripPlanPublic" resultType="boolean"
+		parameterType="long">
+		SELECT is_public
+		FROM trip_plan
+		WHERE id = #{id}
+	</select>
+
+
+	<delete id="delete" parameterType="long">
+		DELETE FROM trip_plan WHERE id
+		= #{id}
+	</delete>
+	<update id="update" parameterType="TripPlan">
+		UPDATE trip_plan
+		SET member_id
+		= 1
+		WHERE id = #{id}
+	</update>
+
+</mapper>

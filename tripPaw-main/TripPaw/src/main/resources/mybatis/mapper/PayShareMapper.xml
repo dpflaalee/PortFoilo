@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.ssdam.tripPaw.pay.PayShareMapper">
+
+  <resultMap id="PayShareResultMap" type="com.ssdam.tripPaw.domain.PayShare">
+    <id property="id" column="id"/>
+    <result property="amount" column="amount"/>
+    <result property="hasPaid" column="has_paid"/>
+    <result property="paidAt" column="paid_at"/>
+    <result property="createdAt" column="created_at"/>
+
+    <association property="pay" column="pay_id" javaType="com.ssdam.tripPaw.domain.Pay">
+      <id property="id" column="pay_id"/>
+    </association>
+
+    <association property="member" column="member_id" javaType="com.ssdam.tripPaw.domain.Member">
+      <id property="id" column="member_id"/>
+    </association>
+  </resultMap>
+
+  <select id="findById" resultMap="PayShareResultMap">
+    SELECT * FROM pay_share WHERE id = #{id}
+  </select>
+
+  <select id="findAll" resultMap="PayShareResultMap">
+    SELECT * FROM pay_share
+  </select>
+
+	<insert id="insert" parameterType="com.ssdam.tripPaw.domain.PayShare">
+	  INSERT INTO pay_share (
+	    amount, has_paid, paid_at, created_at, pay_id, member_id
+	  ) VALUES (
+	    #{amount}, #{hasPaid}, #{paidAt}, #{createdAt}, #{pay.id}, #{member.id}
+	  )
+	</insert>
+
+	<update id="update" parameterType="com.ssdam.tripPaw.domain.PayShare">
+	  UPDATE pay_share
+	  SET has_paid = #{hasPaid}, paid_at = #{paidAt}
+	  WHERE id = #{id}
+	</update>
+	
+	<!-- 해당 Pay에 대해 결제 안한 인원 수 조회 -->
+	<select id="countUnpaidByPayId" resultType="int">
+	  SELECT COUNT(*) FROM pay_share
+	  WHERE pay_id = #{payId} AND has_paid = false
+	</select>
+	
+	<!-- 해당 Pay에 연결된 PayShare 전체 조회 -->
+	<select id="findByPayId" resultMap="PayShareResultMap">
+	  SELECT * FROM pay_share
+	  WHERE pay_id = #{payId}
+	</select>
+	
+	<select id="findByPayIdAndMemberId" resultMap="PayShareResultMap">
+	  SELECT * FROM pay_share
+	  WHERE pay_id = #{payId} AND member_id = #{memberId}
+	</select>
+	
+	<select id="countByPayId" resultType="int">
+	  SELECT COUNT(*) FROM pay_share
+	  WHERE pay_id = #{payId}
+	</select>
+
+	<select id="findByReservIdAndMember" resultMap="PayShareResultMap" parameterType="map">
+	  SELECT ps.*
+	  FROM pay_share ps
+	  JOIN pay p ON ps.pay_id = p.id
+	  WHERE p.reserv_id = #{reservId}
+	    AND ps.member_id = #{memberId}
+	</select>
+
+	<select id="findParticipantsByPayId" resultType="com.ssdam.tripPaw.domain.Member">
+      SELECT m.* 
+      FROM member m
+      JOIN pay_share ps ON m.id = ps.member_id
+      JOIN pay p ON ps.pay_id = p.id
+      WHERE p.reserv_id = #{reservId}
+    </select>
+
+  <delete id="delete">
+    DELETE FROM pay_share WHERE id = #{id}
+  </delete>
+
+</mapper>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{fragments/layout}">
+
+<th:block layout:fragment="content">
+
+
+<script th:inline="javascript">
+    var currentUserId = 0;
+    var followingIds = [];
+    var blockedUsers = [];
+</script>
+
+
+
+<!-- 탭 버튼 -->
+<ul class="nav nav-tabs justify-content-center" id="followTab" role="tablist">
+	<li class="nav-item w-50" role="presentation">
+		<button class="nav-link w-100" id="follower-tab" data-bs-toggle="tab"
+			data-bs-target="#follower" type="button" role="tab"
+			aria-controls="follower" aria-selected="false">팔로워<span th:text="${followers != null ? followers.size() : 0}">0</span></button>
+	</li>
+	<li class="nav-item w-50" role="presentation">
+		<button class="nav-link active w-100" id="following-tab" data-bs-toggle="tab"
+			data-bs-target="#following" type="button" role="tab" aria-controls="following"
+			aria-selected="true">팔로잉<span th:text="${followings != null ? followings.size():0}">0</span></button>
+	</li>	
+</ul>
+
+<!-- 유저 검색 입력창 -->
+<div class="container mt-3">
+    <div class="input-group mb-3">
+        <input type="text" id="searchUserInput" class="form-control" placeholder="유저 검색">
+        <button type="button" class="btn btn-outline-secondary" id="searchUserBtn">검색</button>
+    </div>
+    <div id="searchResults"></div>
+</div>
+
+<!-- 팔로워/팔로잉 탭 -->
+<div class="container-fluid p-3">
+	<div class="tab-content" id="followTabContent">
+		
+<!-- 팔로워 탭 -->
+<div class="tab-pane fade" id="follower" role="tabpanel" aria-labelledby="follower-tab">
+	<table class="table">
+		<tr th:each="follow : ${followers}">
+			<td>
+				<div class="d-flex align-items-center">
+					<div class="p-2 bd-highlight">
+						<img class="rounded-circle" src="https://placehold.co/80x80">
+					</div>
+					<div class="p-2 flex-grow-1 bd-highlight" style="font-size: 1.2em; font-weight: bold;">
+						<span th:text="${follow.follower.username}">username</span>
+					</div>
+					<div class="p-2" th:if="${follow.follower.id != currentUserId}">
+                         <button class="btn follow-btn"
+                                 th:data-user-id="${follow.follower.id}"
+                                 th:text="${followingIds.contains(follow.follower.id) ? '팔로잉' : '팔로우'}"
+                                 th:classappend="${followingIds.contains(follow.follower.id) ? 'btn-warning' : 'btn-outline-warning'}"
+                                 style="border: 2px solid #f8b739; font-weight: bold;">
+                         </button>
+                    </div>
+				</div>
+			</td>
+		</tr>
+        <tr th:if="${followers.size() == 0}">
+            <td colspan="3" class="text-center">팔로워가 없습니다.</td>
+        </tr>
+	</table>
+</div>
+
+<!-- 팔로잉 탭 -->
+<div class="tab-pane fade show active" id="following" role="tabpanel" aria-labelledby="following-tab">
+	<table class="table">
+		<tr th:each="follow : ${followings}">
+			<td>
+				<div class="d-flex align-items-center">
+					<div class="p-2 bd-highlight">
+						<img class="rounded-circle" src="https://placehold.co/80x80">
+					</div>
+					<div class="p-2 flex-grow-1 bd-highlight" style="font-size: 1.2em; font-weight: bold;">
+						<span th:text="${follow.following.username}">username</span>
+					</div>
+					<div class="p-2" th:if="${follow.following.id != currentUserId}">
+                        <button class="btn follow-btn"
+                                th:data-user-id="${follow.following.id}"
+                                th:text="${followingIds.contains(follow.following.id) ? '팔로잉' : '팔로우'}"
+                                th:classappend="${followingIds.contains(follow.following.id) ? 'btn-warning' : 'btn-outline-warning'}"
+                                style="border: 2px solid #f8b739; font-weight: bold;">
+                        </button>
+                    </div>
+				</div>
+			</td>
+		</tr>
+        <tr th:if="${followings.size() == 0}">
+            <td colspan="3" class="text-center">팔로잉이 없습니다.</td>
+        </tr>
+	</table>
+</div>
+	</div>
+</div>
+</th:block>
+
+<th:block layout:fragment="follow">
+<script>
+$(document).ready(function () {
+    // CSRF 설정
+    const csrfToken = $("meta[name='_csrf']").attr("content");
+    const csrfHeader = $("meta[name='_csrf_header']").attr("content");
+
+    if (csrfToken && csrfHeader) {
+        $.ajaxSetup({
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader(csrfHeader, csrfToken);
+            }
+        });
+    }
+
+    updateFollowCounts();
+    
+    function updateButtonState(button, isFollowing) {
+        button.text(isFollowing ? "팔로잉" : "팔로우")
+              .toggleClass("btn-warning", isFollowing)
+              .toggleClass("btn-outline-warning", !isFollowing);
+    }
+
+    function updateSearchResultsButtons() {
+        $("#searchResults .follow-search-btn").each(function() {
+            const btn = $(this);
+            const userId = btn.data("user-id");
+            const isFollowing = followingIds.includes(userId);
+            updateButtonState(btn, isFollowing);
+        });
+    }
+
+    function updateFollowingCount() {
+        $("#following-tab span").text(followingIds.length);
+    }
+
+    function updateFollowerCount() {
+        $.ajax({
+            url: "/follow/followers",
+            type: "GET",
+            data: { userId: currentUserId },
+            success: function (followers) {
+                $("#follower-tab span").text(followers.length);
+                renderFollowerList(followers);
+            },
+            error: function () {
+                alert("팔로워 목록을 불러오지 못했습니다.");
+            }
+        });
+    }
+
+    function renderFollowerList(followers) {
+        let html = "<table class='table'>";
+        if (followers.length === 0) {
+            html += "<tr><td class='text-center'>팔로워가 없습니다.</td></tr>";
+        } else {
+            followers.forEach(f => {
+                const isFollowing = followingIds.includes(f.followerId);
+                html += `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img class="rounded-circle p-2" src="https://placehold.co/80x80">
+                                <div class="p-2 flex-grow-1" style="font-weight: bold;">
+                                    ${f.username}
+                                </div>
+                                <div class="p-2">
+                                    <button class="btn follow-btn ${isFollowing ? 'btn-warning' : 'btn-outline-warning'}"
+                                            data-user-id="${f.followerId}"
+                                            style="border: 2px solid #f8b739; font-weight: bold;">
+                                        ${isFollowing ? '팔로잉' : '팔로우'}
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+            });
+        }
+        html += "</table>";
+        $("#follower").html(html);
+    }
+
+    function updateFollowingList() {
+        $.ajax({
+            url: "/follow/following",
+            type: "GET",
+            data: { userId: currentUserId },
+            success: function (followings) {
+                followingIds = followings.map(f => f.id);
+                updateFollowingCount();
+
+                let html = "<table class='table'>";
+                if (followings.length === 0) {
+                    html += "<tr><td class='text-center'>팔로잉이 없습니다.</td></tr>";
+                } else {
+                    followings.forEach(f => {
+                        html += `
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img class="rounded-circle p-2" src="https://placehold.co/80x80">
+                                    <div class="p-2 flex-grow-1" style="font-weight: bold;">${f.username}</div>
+                                    <div class="p-2">
+                                        <button class="btn follow-btn btn-warning"
+                                                data-user-id="${f.id}"
+                                                style="border: 2px solid #f8b739; font-weight: bold;">
+                                            팔로잉
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>`;
+                    });
+                }
+                html += "</table>";
+                $("#following").html(html);
+            },
+            error: function () {
+                alert("팔로잉 목록을 불러오지 못했습니다.");
+            }
+        });
+    }
+
+    // 버튼 공통 처리
+    $(document).on("click", ".follow-btn, .follow-search-btn", function () {
+        const btn = $(this);
+        const followingId = btn.data("user-id");
+
+        if (followingId === currentUserId) {
+            alert("자기 자신은 팔로우할 수 없습니다.");
+            return;
+        }
+
+        if (blockedUsers.includes(followingId)) {
+            alert("차단된 유저입니다.");
+            return;
+        }
+
+        const isFollowing = followingIds.includes(followingId);
+
+        const ajaxOptions = {
+            url: "/follow",
+            type: isFollowing ? "DELETE" : "POST",
+            data: { followerId: currentUserId, followingId },
+            success: function () {
+                if (isFollowing) {
+                    followingIds = followingIds.filter(id => id !== followingId);
+                    alert("언팔로우 성공!");
+                } else {
+                    followingIds.push(followingId);
+                    alert("팔로우 성공!");
+                }
+                updateButtonState(btn, !isFollowing);
+                updateFollowingList();
+                updateFollowerCount(); 
+                updateSearchResultsButtons();
+                
+                updateFollowCounts();
+            },
+            error: function () {
+                alert((isFollowing ? "언팔로우" : "팔로우") + " 실패");
+            }
+        };
+
+        $.ajax(ajaxOptions);
+    });
+
+    // 검색 버튼 클릭
+    $("#searchUserBtn").click(function () {
+        const keyword = $("#searchUserInput").val().trim();
+        if (!keyword) return;
+
+        $.ajax({
+            url: "/search/users",
+            type: "GET",
+            data: { keyword: keyword, currentUserId: currentUserId },
+            success: function (users) {
+                let html = "<ul class='list-group'>";
+                if (users.length === 0) {
+                    html += "<li class='list-group-item'>검색 결과가 없습니다.</li>";
+                } else {
+                    users.filter(user => !blockedUsers.includes(user.id))
+                         .forEach(user => {
+                            const isFollowing = followingIds.includes(user.id);
+                            html += `
+                                <li class='list-group-item d-flex justify-content-between align-items-center'>
+                                    <span>${user.username}</span>
+                                    <button class="btn follow-search-btn ${isFollowing ? 'btn-warning' : 'btn-outline-warning'}"
+                                            data-user-id="${user.id}">${isFollowing ? '팔로잉' : '팔로우'}</button>
+                                </li>`;
+                         });
+                }
+                html += "</ul>";
+                $("#searchResults").html(html);
+            },
+            error: function () {
+                alert("검색 실패");
+            }
+        });
+    });
+});
+</script>
+
+</th:block>
+
+</html>

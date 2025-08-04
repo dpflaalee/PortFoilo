@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="sideBar">
+
+	<nav id="sidebar">
+		<div class="p-4 pt-5">
+			<!-- 프로필 -->
+			<a th:href="@{/mypage}" class="img logo rounded-circle mb-3"
+				th:style="'background-image: url(' + @{${profileImage}} + '); background-color: white;'">
+				<img th:src="@{${profileImage}}" class="rounded-circle img-fluid" alt="" />
+			</a>
+			<div class="container-fluid mb-2"
+				style="text-align: center; font-weight: bold;" th:text="${nickname}"></div>
+			<div class="d-flex justify-content-center mb-3">
+				<div style="padding: 0 10px;">
+					<a th:href="@{/user/follow}" class="nav-link">일기<span
+						th:text="${diaryCount}"> 0</span></a>
+				</div>
+				<div style="padding: 0 10px;">
+					<a th:href="@{/user/follow}" class="nav-link p-0">팔로워<span
+						id="sidebar-follower-count"
+						th:text="${followers != null ? followers.size() : 0}"> 0</span></a>
+				</div>
+				<div style="padding: 0 10px;">
+					<a th:href="@{/user/follow}" class="nav-link p-0">팔로잉<span
+						id="sidebar-following-count"
+						th:text="${followings != null ? followings.size() : 0}"> 0</span></a>
+				</div>
+			</div>
+			<div class="container">
+				<a href="#profileModal" class="btn p-2 mb-2"
+					style="width: 100%; font-weight: bold; color: #fff; font-size: 0.8em;"
+					data-bs-toggle="modal">프로필 수정</a>
+			</div>
+			<div class="container">
+				<a th:href="@{/block/list}" class="btn p-2 mb-2"
+					style="width: 100%; font-weight: bold; color: #fff; font-size: 0.8em;">차단</a>
+			</div>
+			<!-- 프로필 -->
+			<ul class="list-unstyled components mb-5" style="height: 45%;">
+				<li><a th:href="@{/main}" class="nav-link">HOME</a></li>
+				<li><a href="#pageSubmenu" data-bs-toggle="collapse"
+					aria-expanded="false" class="dropdown-toggle nav-link">GROUP</a>
+					<ul class="collapse list-unstyled" id="pageSubmenu">
+						<li><a th:href="@{/group/main}" class="nav-link">GROUP
+								HOME</a></li>
+						<li>
+							<ul class="list-unstyled" th:each="group : ${groups}">
+								<li class="d-flex bd-highlight">
+									<div class="flex-grow-1 bd-highlight">
+										<a th:href="@{|/group/group/${group.id}|}" class="nav-link"
+											th:text="${group.group_title}"></a>
+									</div>
+									<div class="bd-highlight">
+										<a href="javascript:void(0);" data-bs-toggle="modal"
+											data-bs-target="#updateModal" data-bs-whatever="@fat"
+											th:attr="onclick=|openGroupUpdateModal('${group.id}', '${group.group_content}', '${group.group_title}')|"
+											th:if="${user} == ${group.group_leader}"> <i
+											class="bi bi-pencil-fill p-2"></i>
+										</a>
+									</div>
+									<div class="bd-highlight">
+										<a href="javascript:void(0);" data-bs-toggle="modal"
+											data-bs-target="#deleteModal"
+											th:attr="onclick=|openGroupDeleteModal('${group.id}')|"
+											th:if="${user} == ${group.group_leader}"><i
+											class="bi bi-trash p-2"> </i></a>
+									</div>
+								</li>
+							</ul>
+						</li>
+						<li><a class="w-100 text-center"
+							data-bs-target="#insertGroupModal" data-bs-toggle="modal"><i
+								class="bi bi-plus-circle"></i></a></li>
+					</ul></li>
+			</ul>
+			<!-- 메인 페이지 버튼 -->
+			<th:block th:if="${isMainPage}">
+				<div class="container-fluide">
+					<a th:href="@{diary/insert}" class="btn p-3 mb-5"
+						style="width: 100%; background-color: #f8b739; font-weight: bold; color: #fff;">일기쓰기</a>
+				</div>
+			</th:block>
+			<!-- 마이페이지 버튼 -->
+			<th:block th:if="${isMyPage}">
+				<div class="container-fluide">
+					<a th:href="@{/user/logout}" class="btn mb-3 p-3"
+						style="width: 100%; font-weight: bold; color: #f8b739; border: 3px solid #f8b739;"
+						sec:authorize="isAuthenticated()">로그아웃</a>
+				</div>
+				<div class="container-fluide">
+					<a th:href="@{/fragments/sidebar/delete}" class="btn mb-3 p-3"
+						style="width: 100%; font-weight: bold; color: #d10e00; border: 3px solid #d10e00;"
+						data-bs-toggle="modal" data-bs-target="#leaveModal"
+						data-bs-whatever="@fat">탈퇴하기</a>
+				</div>
+			</th:block>
+			<th:block th:if="${isFollow}">
+				<div class="container-fluide">
+					<a th:href="@{/user/logout}" class="btn mb-3 p-3"
+						style="width: 100%; font-weight: bold; color: #f8b739; border: 3px solid #f8b739;"
+						sec:authorize="isAuthenticated()">로그아웃</a>
+				</div>
+				<div class="container-fluide">
+					<a th:href="@{/fragments/sidebar/delete}" class="btn mb-3 p-3"
+						style="width: 100%; font-weight: bold; color: #d10e00; border: 3px solid #d10e00;"
+						data-bs-toggle="modal" data-bs-target="#leaveModal"
+						data-bs-whatever="@fat">탈퇴하기</a>
+				</div>
+			</th:block>
+			<!-- 그룹 페이지 버튼 -->
+			<th:block th:if="${isGroupPage}">
+				<th:block th:if="${group != null}">
+					<th:block th:if="${isMyGroup}">
+						<div class="container-fluide">
+							<a th:href="@{/group/{id}/diary/insert(id=${group.id})}"
+								class="btn p-3 mb-3"
+								style="width: 100%; font-weight: bold; color: #fff; background-color: #f8b739;">일기쓰기</a>
+						</div>
+						<div class="container-fluide">
+							<button th:attr="onclick=|openGroupLeaveModal('${group.id}')|"
+								class="btn p-3 mb-3"
+								style="width: 100%; font-weight: bold; color: #fff; background-color: #f8b739;">그룹
+								탈퇴하기</button>
+						</div>
+					</th:block>
+				</th:block>
+			</th:block>
+			<!-- 생성모달 -->
+			<div class="modal fade" id="insertGroupModal" tabindex="-1"
+				aria-labelledby="updateModalLabel" aria-hidden="true">
+				<div class="modal-dialog" style="color: #000;">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h1 class="modal-title fs-5" id="exampleModalLabel">그룹 만들기</h1>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"
+								aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<form th:action="@{/group/insert}" method="post">
+								<div class="mb-3">
+									<label for="group_title" class="col-form-label"></label> <input
+										type="text" class="form-control" id="group_title_insert"
+										name="group_title" placeholder="그룹 이름을 입력하세요.">
+								</div>
+								<div class="mb-3">
+									<label for="group_content" class="col-form-label"></label>
+									<textarea class="form-control" id="group_content_insert"
+										name="group_content" style="resize: none; height: 15vh;"
+										placeholder="그룹에 대해서 설명해주세요."></textarea>
+								</div>
+								<div class="modal-footer justify-content-center">
+									<div>
+										<button type="reset" class="btn btn-secondary p-2"
+											data-bs-dismiss="modal">취소</button>
+									</div>
+									<div>
+										<button type="submit" class="btn btn-primary p-2">만들기</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- 삭제모달 -->
+			<div class="modal fade" id="deleteModal" tabindex="-1"
+				aria-labelledby="deleteModalLabel" aria-hidden="true">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-body">
+							<form id="deleteGroupForm" method="post">
+								<p style="text-align: center; padding-top: 2em; color: #000;"
+									id="delete_group_title"></p>
+								<p style="text-align: center; padding-top: 2em; color: #000;">그룹을
+									삭제하시겠습니까?</p>
+								<div class="modal-footer justify-content-center">
+									<div>
+										<button type="reset" class="btn btn-secondary p-2"
+											data-bs-dismiss="modal">취소</button>
+									</div>
+									<div>
+										<button type="submit" class="btn btn-primary p-2">삭제하기</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- 그룹 탈퇴 모달 -->
+			<div class="modal fade" id="leaveGroupModal" tabindex="-1"
+				aria-labelledby="leaveModalLabel" aria-hidden="true">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-body">
+							<form id="leaveGroupForm" method="post">
+								<label for="group_title" class="col-form-label"></label>
+								<p th:if="${group != null}"
+									style="text-align: center; padding-top: 2em; color: #000;"
+									th:text="${group.group_title}"></p>
+								<p style="text-align: center; padding-top: 2em; color: #000;">그룹에서
+									탈퇴하시겠습니까?</p>
+								<div class="modal-footer justify-content-center">
+									<div>
+										<button type="reset" class="btn btn-secondary p-2"
+											data-bs-dismiss="modal">취소</button>
+									</div>
+									<div>
+										<button type="submit" class="btn btn-primary p-2">탈퇴하기</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- 수정모달 -->
+			<div class="modal fade" id="updateModal" tabindex="-1"
+				aria-labelledby="updateModalLabel" aria-hidden="true">
+				<div class="modal-dialog" style="color: #000;">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h1 class="modal-title fs-5" id="exampleModalLabel">그룹 수정하기</h1>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"
+								aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<form id="updateGroupForm" method="post">
+								<div class="mb-3">
+									<label for="group_title" class="col-form-label"></label> <input
+										type="text" class="form-control" id="group_title_update"
+										name="group_title" value="">
+								</div>
+								<div class="mb-3">
+									<label for="group_content" class="col-form-label"></label>
+									<textarea class="form-control" id="group_content_update"
+										name="group_content" style="resize: none; height: 15vh;"
+										value=""></textarea>
+								</div>
+								<div class="modal-footer justify-content-center">
+									<div>
+										<button type="reset" class="btn btn-secondary p-2"
+											data-bs-dismiss="modal">취소</button>
+									</div>
+									<div>
+										<button type="submit" class="btn btn-primary p-2">변경하기</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!--  프로필 수정모달 -->
+			<div class="modal fade" id="profileModal" tabindex="-1"
+				aria-labelledby="profileModalLabel" aria-hidden="true">
+				<div class="modal-dialog" style="color: #000;">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h1 class="modal-title fs-5" id="profileModalLabel">프로필 수정하기</h1>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"
+								aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<form method="post" th:action="@{/fragments/sidebar/nickname}">
+								<div class="mb-3">
+									<label for="username" class="col-form-label">닉네임 변경</label> <input
+										type="text" class="form-control" id="username" name="username"
+										th:value="${nickname}">
+								</div>
+								<div class="modal-footer justify-content-center">
+									<div>
+										<button type="button" class="btn btn-secondary p-2"
+											data-bs-dismiss="modal">취소</button>
+									</div>
+									<div>
+										<button type="submit" class="btn btn-primary p-2">변경하기</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- 삭제모달 -->
+			<div class="modal fade" id="leaveModal" tabindex="-1"
+				aria-labelledby="leaveModalLabel" aria-hidden="true">
+				<div class="modal-dialog" style="color: #000;">
+					<div class="modal-content">
+						<div class="modal-body">
+							<h1
+								style="text-align: center; padding-top: 1.5em; font-size: 1.8em;">탈퇴하시겠습니까?</h1>
+							<form th:action="@{/user/delete}" method="post">
+								<div class="mb-3">
+									<label for="password" class="col-form-label">비밀번호</label> <input
+										type="password" class="form-control" id="password"
+										name="password">
+								</div>
+								<div class="modal-footer justify-content-center">
+									<div>
+										<button type="reset" class="btn btn-secondary p-2"
+											data-bs-dismiss="modal">취소</button>
+									</div>
+									<div>
+										<button type="submit" class="btn btn-primary p-2">탈퇴하기</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="footer">
+				<p>
+					Copyright &copy; All rights reserved | This template is made with <i
+						class="icon-heart" aria-hidden="true"></i> by <a
+						href="https://colorlib.com" target="_blank" class="nav-link">Colorlib.com</a>
+				</p>
+			</div>
+		</div>
+	</nav>
+
+	<script>
+		//goal
+		function openUpdateModal(id, content, dueDate, openScopeId) {
+			document.getElementById("goal_content_update").value = content;
+			document.getElementById("dueDate_update").value = dueDate;
+			document.getElementById("openScope_update").value = openScopeId;
+
+			// 동적으로 action 설정
+			document.getElementById("updateGoalForm").action = `/goal/update/${id}`;
+		}
+
+		function openDeleteModal(id) {
+			document.getElementById("deleteGoalForm").action = `/goal/delete/${id}`;
+		}
+
+		/// group
+		function openGroupUpdateModal(id, content, title) {
+			document.getElementById("group_title_update").value = title;
+			document.getElementById("group_content_update").value = content;
+			document.getElementById("updateGroupForm").action = `/group/update/${id}`;
+		}
+
+		function openGroupDeleteModal(id, title) {
+			document.getElementById("delete_group_title").textContent = title;
+			document.getElementById("deleteGroupForm").action = `/group/delete/${id}`;
+		}
+		function openGroupLeaveModal(id) {
+			document.getElementById("leaveGroupForm").action = `/group/leave/${id}`;
+
+			const modal = new bootstrap.Modal(document
+					.getElementById('leaveGroupModal'));
+			modal.show();
+		}
+
+		function updateFollowCounts() {
+			$.ajax({
+				url : '/user/follow/counts?ts=' + new Date().getTime(),
+				method : 'GET',
+				success : function(data) {
+					const $followerCount = $('#sidebar-follower-count');
+					const $followingCount = $('#sidebar-following-count');
+
+					if ($followerCount.length > 0) {
+						$followerCount.text(data.followers);
+					}
+					if ($followingCount.length > 0) {
+						$followingCount.text(data.followings);
+					}
+				},
+				error : function(err) {
+					console.error("팔로우 수 가져오기 실패", err);
+				}
+			});
+		}
+
+		$(function() {
+			updateFollowCounts();
+		});
+
+		function toggleFollow(userId) {
+			$.ajax({
+				url : '/user/follow/toggle/' + userId,
+				method : 'POST',
+				success : function(response) {
+					// UI 상태 업데이트
+					if (response.following) {
+						$('#follow-btn').text('언팔로우');
+					} else {
+						$('#follow-btn').text('팔로우');
+					}
+
+					//  팔로우/팔로잉 수 갱신
+					updateFollowCounts();
+				},
+				error : function(err) {
+					console.error("팔로우 토글 실패", err);
+				}
+			});
+		}
+	</script>
+</th:block>
+</html>

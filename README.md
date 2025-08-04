@@ -6,7 +6,6 @@
 
 ## 📫 Contact Me
 - 📧 Email: `dpflalee@gmail.com`
-- 💼 Portfolio: [your-portfolio.com](https://your-portfolio.com)
 - 💻 GitHub: [github.com/dpflaalee](https://github.com/dpflaalee)
 - 📝 Blog: [Notion](https://www.notion.so/23b15db90ac280bfa383e40fdf217cb2?source=copy_link)
 <br/><br/>
